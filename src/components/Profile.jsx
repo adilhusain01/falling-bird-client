@@ -3,6 +3,94 @@ import { usePrivy, useWallets, useLogout } from '@privy-io/react-auth';
 import { useNavigate } from 'react-router-dom';
 import { ethers } from 'ethers';
 
+// Styles for the Profile component
+const styles = {
+  container: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    width: '100%',
+    height: '100%',
+    padding: '20px',
+    overflowY: 'auto',
+  },
+  title: {
+    color: '#333',
+    fontSize: '32px',
+    marginBottom: '15px',
+    textAlign: 'center',
+  },
+  section: {
+    width: '100%',
+    maxWidth: '340px',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: '15px',
+    padding: '20px',
+    marginBottom: '15px',
+    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
+  },
+  sectionTitle: {
+    fontSize: '20px',
+    color: '#444',
+    marginBottom: '15px',
+    textAlign: 'center',
+  },
+  text: {
+    color: '#555',
+    margin: '8px 0',
+    fontSize: '14px',
+    wordBreak: 'break-word',
+  },
+  button: {
+    width: '100%',
+    padding: '14px 20px',
+    marginBottom: '12px',
+    borderRadius: '25px',
+    border: 'none',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+  },
+  primaryButton: {
+    background: 'linear-gradient(45deg, #4ECDC4, #45B7B8)',
+    color: 'white',
+  },
+  secondaryButton: {
+    background: 'linear-gradient(45deg, #FF6B6B, #FF8E8E)',
+    color: 'white',
+  },
+  disabledButton: {
+    opacity: 0.6,
+    cursor: 'not-allowed',
+  },
+  buttonGroup: {
+    display: 'flex',
+    gap: '10px',
+    width: '100%',
+    maxWidth: '340px',
+    marginTop: '10px',
+  },
+  error: {
+    color: '#FF6B6B',
+    marginTop: '15px',
+    textAlign: 'center',
+    fontSize: '14px',
+  },
+  walletAddress: {
+    fontFamily: 'monospace',
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    padding: '6px 10px',
+    borderRadius: '4px',
+    wordBreak: 'break-all',
+  },
+};
+
 const Profile = () => {
   const { user, authenticated, fundWallet } = usePrivy();
   const { wallets } = useWallets();
@@ -114,93 +202,119 @@ const Profile = () => {
 
   if (!authenticated) {
     return (
-      <div style={containerStyle}>
-        <p>Please log in to view your profile.</p>
+      <div className="page-container">
+        <div style={styles.container}>
+          <h1 style={styles.title}>🔐</h1>
+          <div style={styles.section}>
+            <p style={styles.text}>Please log in to view your profile.</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   const wallet = wallets[0]; // Primary wallet
+  const isButtonDisabled = (chainId) => 
+    currentChainId === chainId || wallets.length === 0;
 
   return (
-    <div className="profile-container" style={containerStyle}>
-      <h1 style={{ fontSize: '2rem', marginBottom: '20px' }}>🐦 Profile</h1>
-      
-      <div style={{ marginBottom: '20px', width: '100%', maxWidth: '400px' }}>
-        <h2 style={{ fontSize: '1.5rem', marginBottom: '10px' }}>Wallet Details</h2>
-        {wallet ? (
-          <>
-            <p><strong>Address:</strong> {wallet.address}</p>
-            <p><strong>Network:</strong> {currentChainId || 'Loading...'}</p>
-            <p><strong>Balance:</strong> {balance ? `${parseFloat(balance).toFixed(4)} ETH` : 'Loading...'}</p>
-          </>
-        ) : (
-          <p>No wallet connected. Please connect a wallet via the login interface.</p>
-        )}
-      </div>
+    <div className="page-container">
+      <div style={styles.container}>
+        <h1 style={styles.title}>🐦 Profile</h1>
+        
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>Wallet Details</h2>
+          {wallet ? (
+            <div>
+              <p style={styles.text}>
+                <strong>Address:</strong>
+                <div style={styles.walletAddress}>
+                  {wallet.address}
+                </div>
+              </p>
+              <p style={styles.text}>
+                <strong>Network:</strong> {currentChainId?.split(':')[1] ? 
+                  `Ethereum ${currentChainId === 'eip155:1' ? 'Mainnet' : 'Sepolia Testnet'}` : 
+                  'Loading...'}
+              </p>
+              <p style={styles.text}>
+                <strong>Balance:</strong> {balance ? 
+                  `${parseFloat(balance).toFixed(4)} ETH` : 'Loading...'}
+              </p>
+            </div>
+          ) : (
+            <p style={styles.text}>
+              No wallet connected. Please connect a wallet via the login interface.
+            </p>
+          )}
+        </div>
 
-      <div style={{ marginBottom: '20px', width: '100%', maxWidth: '400px' }}>
-        <h2 style={{ fontSize: '1.5rem', marginBottom: '10px' }}>Wallet Actions</h2>
-        <button
-          style={buttonStyle}
-          onClick={handleFundWallet}
-          disabled={wallets.length === 0}
-        >
-          Fund Wallet (MoonPay)
-        </button>
-        <button
-          style={buttonStyle}
-          onClick={() => handleSwitchNetwork('eip155:1')}
-          disabled={currentChainId === 'eip155:1' || wallets.length === 0}
-        >
-          Ethereum Mainnet
-        </button>
-        <button
-          style={buttonStyle}
-          onClick={() => handleSwitchNetwork('eip155:11155111')}
-          disabled={currentChainId === 'eip155:11155111' || wallets.length === 0}
-        >
-          Sepolia Testnet
-        </button>
-      </div>
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>Wallet Actions</h2>
+          <button
+            style={{
+              ...styles.button,
+              ...styles.primaryButton,
+              ...(wallets.length === 0 && styles.disabledButton)
+            }}
+            onClick={handleFundWallet}
+            disabled={wallets.length === 0}
+          >
+            💰 Fund Wallet (MoonPay)
+          </button>
+          
+          <button
+            style={{
+              ...styles.button,
+              ...(isButtonDisabled('eip155:1') ? styles.disabledButton : styles.primaryButton)
+            }}
+            onClick={() => handleSwitchNetwork('eip155:1')}
+            disabled={isButtonDisabled('eip155:1')}
+          >
+            ⛓️ Ethereum Mainnet
+          </button>
+          
+          <button
+            style={{
+              ...styles.button,
+              ...(isButtonDisabled('eip155:11155111') ? styles.disabledButton : styles.primaryButton)
+            }}
+            onClick={() => handleSwitchNetwork('eip155:11155111')}
+            disabled={isButtonDisabled('eip155:11155111')}
+          >
+            ⛓️ Sepolia Testnet
+          </button>
+        </div>
 
-      <div style={{ display: 'flex', gap: '10px' }}>
-        <button style={buttonStyle} onClick={handleLogout}>
-          Log Out
-        </button>
-        <button style={buttonStyle} onClick={() => navigate('/')}>
-          Back to Game
-        </button>
-      </div>
+        <div style={styles.buttonGroup}>
+          <button 
+            style={{
+              ...styles.button,
+              ...styles.secondaryButton,
+              flex: 1,
+              padding: '12px'
+            }} 
+            onClick={handleLogout}
+          >
+            🔒 Log Out
+          </button>
+          <button 
+            style={{
+              ...styles.button,
+              ...styles.primaryButton,
+              flex: 1,
+              padding: '12px'
+            }} 
+            onClick={() => navigate('/')}
+          >
+            🎮 Back to Game
+          </button>
+        </div>
 
-      {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
+        {error && <p style={styles.error}>{error}</p>}
+      </div>
     </div>
   );
-};
-
-const containerStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: '100vh',
-  background: 'linear-gradient(to bottom, #87CEEB, #B0E0E6)',
-  fontFamily: 'Arial, sans-serif',
-  textAlign: 'center',
-  padding: '20px'
-};
-
-const buttonStyle = {
-  padding: '12px 24px',
-  fontSize: '16px',
-  backgroundColor: '#6A6FF5',
-  color: '#FFFFFF',
-  border: 'none',
-  borderRadius: '8px',
-  cursor: 'pointer',
-  margin: '5px',
-  opacity: ({ disabled }) => (disabled ? 0.5 : 1),
-  pointerEvents: ({ disabled }) => (disabled ? 'none' : 'auto')
 };
 
 export default Profile;

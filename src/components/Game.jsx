@@ -2,6 +2,172 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AudioManager } from '../utils/AudioManager';
 
+// Inline styles for the Game component
+const styles = {
+  gameContainer: {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  gameCanvas: {
+    borderRadius: '20px',
+    boxShadow: '0 15px 40px rgba(0,0,0,0.4)',
+    background: 'linear-gradient(180deg, #87CEEB 0%, #B0E0E6 100%)',
+    width: '100%',
+    height: '100%',
+  },
+  uiOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    pointerEvents: 'none',
+    zIndex: 10,
+    padding: '20px',
+  },
+  scoreDisplay: {
+    position: 'absolute',
+    top: '20px',
+    left: '20px',
+    color: 'white',
+    fontSize: '24px',
+    fontWeight: 'bold',
+    textShadow: '2px 2px 6px rgba(0,0,0,0.8)',
+    pointerEvents: 'none',
+    background: 'rgba(0,0,0,0.3)',
+    padding: '10px 15px',
+    borderRadius: '15px',
+    backdropFilter: 'blur(10px)',
+  },
+  outButton: {
+    position: 'absolute',
+    top: '20px',
+    right: '20px',
+    background: 'linear-gradient(45deg, #FF6B6B, #FF8E8E)',
+    color: 'white',
+    border: 'none',
+    padding: '12px 20px',
+    borderRadius: '20px',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    pointerEvents: 'auto',
+    boxShadow: '0 5px 20px rgba(255,107,107,0.4)',
+    transition: 'all 0.3s ease',
+    textTransform: 'uppercase',
+    backdropFilter: 'blur(10px)',
+    ':hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: '0 8px 25px rgba(255,107,107,0.6)',
+    },
+    ':active': {
+      transform: 'translateY(0)',
+    },
+  },
+  soundToggle: {
+    position: 'absolute',
+    bottom: '20px',
+    left: '20px',
+    background: 'rgba(255,255,255,0.2)',
+    color: 'white',
+    border: 'none',
+    padding: '12px',
+    borderRadius: '50%',
+    fontSize: '18px',
+    cursor: 'pointer',
+    pointerEvents: 'auto',
+    backdropFilter: 'blur(10px)',
+    transition: 'all 0.3s ease',
+    ':hover': {
+      background: 'rgba(255,255,255,0.3)',
+    },
+  },
+  gameOverScreen: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    background: 'rgba(255,255,255,0.95)',
+    padding: '30px',
+    borderRadius: '25px',
+    textAlign: 'center',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+    pointerEvents: 'auto',
+    backdropFilter: 'blur(20px)',
+    width: '90%',
+    maxWidth: '300px',
+    display: 'none',
+  },
+  gameOverTitle: {
+    color: '#333',
+    marginBottom: '15px',
+    fontSize: '28px',
+  },
+  finalScore: {
+    fontSize: '22px',
+    color: '#FF6B6B',
+    marginBottom: '25px',
+    fontWeight: 'bold',
+  },
+  restartButton: {
+    background: 'linear-gradient(45deg, #4ECDC4, #45B7B8)',
+    color: 'white',
+    border: 'none',
+    padding: '15px 30px',
+    borderRadius: '25px',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    width: '100%',
+    ':hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: '0 8px 20px rgba(78,205,196,0.4)',
+    },
+  },
+  startScreen: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    background: 'rgba(255,255,255,0.95)',
+    padding: '30px',
+    borderRadius: '25px',
+    textAlign: 'center',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+    pointerEvents: 'auto',
+    backdropFilter: 'blur(20px)',
+    width: '90%',
+    maxWidth: '320px',
+  },
+  startTitle: {
+    color: '#333',
+    marginBottom: '15px',
+    fontSize: '32px',
+  },
+
+  startButton: {
+    background: 'linear-gradient(45deg, #4ECDC4, #45B7B8)',
+    color: 'white',
+    border: 'none',
+    padding: '18px 35px',
+    borderRadius: '30px',
+    fontSize: '18px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    width: '100%',
+    ':hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: '0 8px 20px rgba(78,205,196,0.4)',
+    },
+  },
+};
+
 const Game = () => {
   const [gameState, setGameState] = useState('start');
   const [score, setScore] = useState(0.0);
@@ -304,92 +470,91 @@ const Game = () => {
   }, [score]);
 
   return (
-    <div className="game-container">
-      <canvas ref={canvasRef} id="gameCanvas" width="360" height="640" />
+    <div className="page-container">
+      <div style={styles.gameContainer}>
+        <canvas 
+          ref={canvasRef} 
+          id="gameCanvas" 
+          width="360" 
+          height="640"
+          style={styles.gameCanvas}
+        />
 
-      <div className="ui-overlay">
-        {gameState === 'playing' && (
-          <>
-            <div
-              className="score-display"
-              style={{
-                position: 'absolute',
+        <div style={styles.uiOverlay}>
+          {gameState === 'playing' && (
+            <>
+              <div style={{
+                ...styles.scoreDisplay,
                 top: '100px',
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 10,
-              }}
-            >
-              Score: {score.toFixed(1)}x
-            </div>
-            <div
-              style={{
+              }}>
+                Score: {score.toFixed(1)}x
+              </div>
+              <div style={{
                 position: 'absolute',
                 left: '65%',
                 bottom: '160px',
                 transform: 'translateX(-50%)',
                 zIndex: 10,
-              }}
+              }}>
+                <button 
+                  style={styles.outButton}
+                  onClick={cashOut}
+                >
+                  OUT
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {gameState === 'start' && (
+          <div style={styles.startScreen}>
+            <h1 style={styles.startTitle}>🐦 Shishimaroo</h1>
+            <button 
+              style={styles.startButton} 
+              onClick={startGame}
             >
-              <button className="out-button" onClick={cashOut}>OUT</button>
-            </div>
-          </>
+              Start Falling
+            </button>
+            <button
+              style={{
+                ...styles.restartButton,
+                background: '#6A6FF5',
+                marginTop: '10px'
+              }}
+              onClick={() => navigate('/profile')}
+            >
+              View Profile
+            </button>
+          </div>
+        )}
+
+        {gameState === 'gameOver' && (
+          <div style={{ ...styles.gameOverScreen, display: 'block' }}>
+            <h2 style={styles.gameOverTitle}>{gameOverInfo.title}</h2>
+            <div style={styles.finalScore}>{gameOverInfo.scoreText}</div>
+            <button 
+              style={styles.restartButton} 
+              onClick={startGame}
+            >
+              Play Again
+            </button>
+            <button
+              style={{
+                ...styles.restartButton,
+                background: '#6A6FF5',
+                marginTop: '10px'
+              }}
+              onClick={() => navigate('/profile')}
+            >
+              View Profile
+            </button>
+          </div>
         )}
       </div>
-
-      {gameState === 'start' && (
-        <div className="start-screen">
-          <h1>🐦 Shishimaroo</h1>
-          <p>
-          Help Shishimaroo fall through the clouds!
-The longer you fall, the higher your score.
-Click "OUT" to cash out—
-but crash, and you lose it all!
-
-          </p>
-          <button className="start-button" onClick={startGame}>Start Falling</button>
-          <button
-            className="profile-button"
-            style={{
-              padding: '12px 24px',
-              fontSize: '16px',
-              backgroundColor: '#6A6FF5',
-              color: '#FFFFFF',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              marginTop: '10px'
-            }}
-            onClick={() => navigate('/profile')}
-          >
-            View Profile
-          </button>
-        </div>
-      )}
-
-      {gameState === 'gameOver' && (
-        <div className="game-over-screen" style={{ display: 'block' }}>
-          <h2>{gameOverInfo.title}</h2>
-          <div className="final-score">{gameOverInfo.scoreText}</div>
-          <button className="restart-button" onClick={startGame}>Play Again</button>
-          <button
-            className="profile-button"
-            style={{
-              padding: '12px 24px',
-              fontSize: '16px',
-              backgroundColor: '#6A6FF5',
-              color: '#FFFFFF',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              marginTop: '10px'
-            }}
-            onClick={() => navigate('/profile')}
-          >
-            View Profile
-          </button>
-        </div>
-      )}
     </div>
   );
 };
