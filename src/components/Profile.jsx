@@ -3,94 +3,6 @@ import { usePrivy, useWallets, useLogout } from '@privy-io/react-auth';
 import { useNavigate } from 'react-router-dom';
 import { ethers } from 'ethers';
 
-// Styles for the Profile component
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    width: '100%',
-    height: '100%',
-    padding: '20px',
-    overflowY: 'auto',
-  },
-  title: {
-    color: '#333',
-    fontSize: '32px',
-    marginBottom: '15px',
-    textAlign: 'center',
-  },
-  section: {
-    width: '100%',
-    maxWidth: '340px',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: '15px',
-    padding: '20px',
-    marginBottom: '15px',
-    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
-  },
-  sectionTitle: {
-    fontSize: '20px',
-    color: '#444',
-    marginBottom: '15px',
-    textAlign: 'center',
-  },
-  text: {
-    color: '#555',
-    margin: '8px 0',
-    fontSize: '14px',
-    wordBreak: 'break-word',
-  },
-  button: {
-    width: '100%',
-    padding: '14px 20px',
-    marginBottom: '12px',
-    borderRadius: '25px',
-    border: 'none',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-  },
-  primaryButton: {
-    background: 'linear-gradient(45deg, #4ECDC4, #45B7B8)',
-    color: 'white',
-  },
-  secondaryButton: {
-    background: 'linear-gradient(45deg, #FF6B6B, #FF8E8E)',
-    color: 'white',
-  },
-  disabledButton: {
-    opacity: 0.6,
-    cursor: 'not-allowed',
-  },
-  buttonGroup: {
-    display: 'flex',
-    gap: '10px',
-    width: '100%',
-    maxWidth: '340px',
-    marginTop: '10px',
-  },
-  error: {
-    color: '#FF6B6B',
-    marginTop: '15px',
-    textAlign: 'center',
-    fontSize: '14px',
-  },
-  walletAddress: {
-    fontFamily: 'monospace',
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    padding: '6px 10px',
-    borderRadius: '4px',
-    wordBreak: 'break-all',
-  },
-};
-
 const Profile = () => {
   const { user, authenticated, fundWallet } = usePrivy();
   const { wallets } = useWallets();
@@ -203,10 +115,10 @@ const Profile = () => {
   if (!authenticated) {
     return (
       <div className="page-container">
-        <div style={styles.container}>
-          <h1 style={styles.title}>🔐</h1>
-          <div style={styles.section}>
-            <p style={styles.text}>Please log in to view your profile.</p>
+        <div className="flex flex-col items-center justify-start w-full h-full p-5 overflow-y-auto">
+          <h1 className="text-gray-800 text-3xl mb-4 text-center">🔐</h1>
+          <div className="w-full max-w-sm bg-white bg-opacity-90 rounded-2xl p-5 mb-4 shadow-lg">
+            <p className="text-gray-600 my-2 text-sm break-words">Please log in to view your profile.</p>
           </div>
         </div>
       </div>
@@ -219,44 +131,44 @@ const Profile = () => {
 
   return (
     <div className="page-container">
-      <div style={styles.container}>
-        <h1 style={styles.title}>🐦 Profile</h1>
+      <div className="flex flex-col items-center justify-start w-full h-full p-5 overflow-y-auto">
+        <h1 className="text-gray-800 text-3xl mb-4 text-center">🐦 Profile</h1>
         
-        <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>Wallet Details</h2>
+        <div className="w-full max-w-sm bg-white bg-opacity-90 rounded-2xl p-5 mb-4 shadow-lg">
+          <h2 className="text-xl text-gray-700 mb-4 text-center">Wallet Details</h2>
           {wallet ? (
             <div>
-              <p style={styles.text}>
+              <p className="text-gray-600 my-2 text-sm break-words">
                 <strong>Address:</strong>
-                <div style={styles.walletAddress}>
+                <div className="font-mono bg-black bg-opacity-5 px-2.5 py-1.5 rounded mt-1 break-all">
                   {wallet.address}
                 </div>
               </p>
-              <p style={styles.text}>
+              <p className="text-gray-600 my-2 text-sm break-words">
                 <strong>Network:</strong> {currentChainId?.split(':')[1] ? 
                   `Ethereum ${currentChainId === 'eip155:1' ? 'Mainnet' : 'Sepolia Testnet'}` : 
                   'Loading...'}
               </p>
-              <p style={styles.text}>
+              <p className="text-gray-600 my-2 text-sm break-words">
                 <strong>Balance:</strong> {balance ? 
                   `${parseFloat(balance).toFixed(4)} ETH` : 'Loading...'}
               </p>
             </div>
           ) : (
-            <p style={styles.text}>
+            <p className="text-gray-600 my-2 text-sm break-words">
               No wallet connected. Please connect a wallet via the login interface.
             </p>
           )}
         </div>
 
-        <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>Wallet Actions</h2>
+        <div className="w-full max-w-sm bg-white bg-opacity-90 rounded-2xl p-5 mb-4 shadow-lg">
+          <h2 className="text-xl text-gray-700 mb-4 text-center">Wallet Actions</h2>
           <button
-            style={{
-              ...styles.button,
-              ...styles.primaryButton,
-              ...(wallets.length === 0 && styles.disabledButton)
-            }}
+            className={`w-full py-3.5 px-5 mb-3 rounded-3xl border-none text-base font-bold cursor-pointer transition-all duration-300 ease-in-out flex items-center justify-center gap-2 text-white ${
+              wallets.length === 0 
+                ? 'opacity-60 cursor-not-allowed bg-gradient-to-r from-teal-400 to-teal-500' 
+                : 'bg-gradient-to-r from-teal-400 to-teal-500'
+            }`}
             onClick={handleFundWallet}
             disabled={wallets.length === 0}
           >
@@ -264,10 +176,11 @@ const Profile = () => {
           </button>
           
           <button
-            style={{
-              ...styles.button,
-              ...(isButtonDisabled('eip155:1') ? styles.disabledButton : styles.primaryButton)
-            }}
+            className={`w-full py-3.5 px-5 mb-3 rounded-3xl border-none text-base font-bold cursor-pointer transition-all duration-300 ease-in-out flex items-center justify-center gap-2 text-white ${
+              isButtonDisabled('eip155:1')
+                ? 'opacity-60 cursor-not-allowed bg-gradient-to-r from-teal-400 to-teal-500'
+                : 'bg-gradient-to-r from-teal-400 to-teal-500'
+            }`}
             onClick={() => handleSwitchNetwork('eip155:1')}
             disabled={isButtonDisabled('eip155:1')}
           >
@@ -275,10 +188,11 @@ const Profile = () => {
           </button>
           
           <button
-            style={{
-              ...styles.button,
-              ...(isButtonDisabled('eip155:11155111') ? styles.disabledButton : styles.primaryButton)
-            }}
+            className={`w-full py-3.5 px-5 mb-3 rounded-3xl border-none text-base font-bold cursor-pointer transition-all duration-300 ease-in-out flex items-center justify-center gap-2 text-white ${
+              isButtonDisabled('eip155:11155111')
+                ? 'opacity-60 cursor-not-allowed bg-gradient-to-r from-teal-400 to-teal-500'
+                : 'bg-gradient-to-r from-teal-400 to-teal-500'
+            }`}
             onClick={() => handleSwitchNetwork('eip155:11155111')}
             disabled={isButtonDisabled('eip155:11155111')}
           >
@@ -286,32 +200,22 @@ const Profile = () => {
           </button>
         </div>
 
-        <div style={styles.buttonGroup}>
+        <div className="flex gap-2.5 w-full max-w-sm mt-2.5">
           <button 
-            style={{
-              ...styles.button,
-              ...styles.secondaryButton,
-              flex: 1,
-              padding: '12px'
-            }} 
+            className="flex-1 py-3 px-5 rounded-3xl border-none text-base font-bold cursor-pointer transition-all duration-300 ease-in-out flex items-center justify-center gap-2 text-white bg-gradient-to-r from-red-400 to-red-500"
             onClick={handleLogout}
           >
             🔒 Log Out
           </button>
           <button 
-            style={{
-              ...styles.button,
-              ...styles.primaryButton,
-              flex: 1,
-              padding: '12px'
-            }} 
+            className="flex-1 py-3 px-5 rounded-3xl border-none text-base font-bold cursor-pointer transition-all duration-300 ease-in-out flex items-center justify-center gap-2 text-white bg-gradient-to-r from-teal-400 to-teal-500"
             onClick={() => navigate('/')}
           >
             🎮 Back to Game
           </button>
         </div>
 
-        {error && <p style={styles.error}>{error}</p>}
+        {error && <p className="text-red-400 mt-4 text-center text-sm">{error}</p>}
       </div>
     </div>
   );

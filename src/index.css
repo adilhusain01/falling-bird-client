@@ -1,24 +1,20 @@
-@import "tailwindcss";
+ @import "tailwindcss";
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+@layer base {
+  * {
+    @apply m-0 p-0 box-border;
+  }
 
-body {
-    font-family: 'Arial', sans-serif;
+  body {
+    @apply font-sans overflow-hidden h-screen flex justify-center items-center;
     background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
-    overflow: hidden;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    font-family: 'Arial', sans-serif;
+  }
 }
 
-/* Global container for all pages */
-.page-container {
-    position: relative;
+@layer components {
+  .page-container {
+    @apply relative overflow-hidden flex flex-col;
     width: min(400px, 90vw);
     height: min(711px, 90vh);
     aspect-ratio: 9/16;
@@ -26,31 +22,28 @@ body {
     border-radius: 20px;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(10px);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+  }
+
+  .start-button:hover {
+    @apply -translate-y-0.5;
+    box-shadow: 0 10px 25px rgba(78, 205, 196, 0.4);
+  }
 }
 
-.start-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(78,205,196,0.4);
-}
-
-
-@media (max-width: 480px) {
+@layer utilities {
+  @media (max-width: 480px) {
     .game-container {
-        width: 95vw;
-        height: 95vh;
+      @apply w-screen h-screen;
+      width: 95vw;
+      height: 95vh;
     }
-    
-    .score-display {
-        font-size: 20px;
-        padding: 8px 12px;
-    }
-    
-    .out-button {
-        padding: 10px 16px;
-        font-size: 14px;
-    }
-}
 
+    .score-display {
+      @apply text-xl px-3 py-2;
+    }
+
+    .out-button {
+      @apply px-4 py-2.5 text-sm;
+    }
+  }
+}
