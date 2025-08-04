@@ -30,7 +30,7 @@ function AppWrapper() {
   return (
     <QueryClientProvider client={queryClient}>
       <PrivyProvider
-        appId="cmdx3unrh01cuk10bwfqveom6"
+        appId="cmdx3unrh01cuk10bwfqveom6" // Replace with your Privy App ID from the Privy Dashboard
         config={{
           appearance: {
             accentColor: '#6A6FF5',

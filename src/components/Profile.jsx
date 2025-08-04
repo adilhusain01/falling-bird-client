@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePrivy, useWallets, useLogout } from '@privy-io/react-auth';
-import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
+import { ethers } from 'ethers';
 
 const Profile = () => {
   const { user, authenticated, fundWallet } = usePrivy();
@@ -23,7 +23,7 @@ const Profile = () => {
           if (wallet.connector?.ethersProvider) {
             provider = wallet.connector.ethersProvider;
           } else {
-            provider = new ethers.JsonRpcProvider('https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID'); // Replace with your Infura ID
+            provider = new ethers.JsonRpcProvider('https://mainnet.infura.io/v3/6aeb4bc17cfe49b5bf0fe4db13799d8a'); // Replace with your Infura ID
           }
           const balanceWei = await provider.getBalance(wallet.address);
           const balanceEth = ethers.formatEther(balanceWei);
