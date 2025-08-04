@@ -6,17 +6,13 @@
     "theme": "#FFFFFF",
     "showWalletLoginFirst": false,
     "logo": "https://auth.privy.io/logos/privy-logo.png",
-    "walletChainType": "ethereum-and-solana",
+    "walletChainType": "ethereum-only",
     "walletList": [
-      "detected_wallets",
+      "detected_ethereum_wallets",
       "metamask",
-      "phantom",
       "coinbase_wallet",
       "base_account",
       "rainbow",
-      "solflare",
-      "backpack",
-      "okx_wallet",
       "wallet_connect"
     ]
   },
@@ -38,7 +34,7 @@
       "createOnLogin": "users-without-wallets"
     },
     "solana": {
-      "createOnLogin": "users-without-wallets"
+      "createOnLogin": "off"
     }
   },
   "mfa": {
