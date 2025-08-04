@@ -12,9 +12,7 @@ export class AudioManager {
                 this.initAudio();
             }
             
-            // Clean up all audio nodes and reset state
             async cleanup() {
-                // Stop all sounds first
                 if (this.fallingSoundNode) {
                     try {
                         this.fallingSoundNode.stop();
@@ -24,7 +22,6 @@ export class AudioManager {
                     this.fallingSoundNode = null;
                 }
                 
-                // Stop all background music nodes
                 this.backgroundMusicNodes.forEach(node => {
                     try {
                         if (node) node.stop();
@@ -34,11 +31,9 @@ export class AudioManager {
                 });
                 this.backgroundMusicNodes = [];
                 
-                // Reset state
                 this.fallingSoundPlaying = false;
                 this.backgroundMusicPlaying = false;
                 
-                // Close the audio context if it exists
                 if (this.context) {
                     try {
                         if (this.context.state !== 'closed') {
@@ -54,15 +49,12 @@ export class AudioManager {
             
             async initAudio() {
                 try {
-                    // Create new audio context
                     this.context = new (window.AudioContext || window.webkitAudioContext)();
                     
-                    // Setup audio graph
                     this.masterGain = this.context.createGain();
                     this.masterGain.connect(this.context.destination);
                     this.masterGain.gain.value = 0.4;
                     
-                    // Separate gain nodes for music and sound effects
                     this.musicGain = this.context.createGain();
                     this.sfxGain = this.context.createGain();
                     
@@ -72,7 +64,6 @@ export class AudioManager {
                     this.musicGain.gain.value = 0.6;
                     this.sfxGain.gain.value = 0.8;
                     
-                    // Resume the context in case it was suspended
                     if (this.context.state === 'suspended') {
                         await this.context.resume();
                     }
@@ -112,7 +103,6 @@ export class AudioManager {
                 this.backgroundMusicPlaying = true;
                 this.backgroundMusicNodes = [];
                 
-                // Thrilling melody progression - inspired by adventure games
                 const melodyNotes = [
                     { freq: 523, duration: 0.3 }, // C5
                     { freq: 659, duration: 0.3 }, // E5
@@ -127,7 +117,6 @@ export class AudioManager {
                     { freq: 523, duration: 0.9 }, // C5
                 ];
                 
-                // Bass line for depth
                 const bassNotes = [
                     { freq: 131, duration: 1.2 }, // C3
                     { freq: 165, duration: 1.2 }, // E3
@@ -138,7 +127,6 @@ export class AudioManager {
                     { freq: 131, duration: 2.4 }, // C3
                 ];
                 
-                // Rhythm/percussion using filtered noise
                 this.playMelodyLoop(melodyNotes, 0, 'triangle');
                 this.playMelodyLoop(bassNotes, 0, 'sawtooth', 0.4);
                 this.playRhythmLoop();
@@ -153,7 +141,6 @@ export class AudioManager {
                 
                 const { oscillator, gainNode } = sound;
                 
-                // Add some vibrato for richness
                 const vibrato = this.context.createOscillator();
                 const vibratoGain = this.context.createGain();
                 vibrato.frequency.setValueAtTime(5, this.context.currentTime);
@@ -174,7 +161,6 @@ export class AudioManager {
                 
                 this.backgroundMusicNodes.push({ oscillator, gainNode, vibrato });
                 
-                // Schedule next note
                 setTimeout(() => {
                     if (this.backgroundMusicPlaying) {
                         const nextIndex = (startIndex + 1) % notes.length;
@@ -186,7 +172,6 @@ export class AudioManager {
             playRhythmLoop() {
                 if (!this.backgroundMusicPlaying) return;
                 
-                // Create kick drum effect
                 const kickOsc = this.createOscillator(60, 'sine', this.musicGain);
                 if (kickOsc) {
                     const { oscillator, gainNode } = kickOsc;
@@ -201,7 +186,6 @@ export class AudioManager {
                     this.backgroundMusicNodes.push(kickOsc);
                 }
                 
-                // Create hi-hat effect with filtered noise
                 setTimeout(() => {
                     if (this.backgroundMusicPlaying) {
                         const noise = this.context.createBufferSource();
@@ -231,12 +215,11 @@ export class AudioManager {
                     }
                 }, 150);
                 
-                // Loop the rhythm
                 setTimeout(() => {
                     if (this.backgroundMusicPlaying) {
                         this.playRhythmLoop();
                     }
-                }, 600); // 100 BPM rhythm
+                }, 600);
             }
             
             stopBackgroundMusic() {
@@ -244,7 +227,6 @@ export class AudioManager {
                 
                 this.backgroundMusicPlaying = false;
                 
-                // Fade out music gradually
                 this.musicGain.gain.linearRampToValueAtTime(0, this.context.currentTime + 1);
                 
                 setTimeout(() => {
@@ -253,12 +235,10 @@ export class AudioManager {
                             if (node.oscillator) node.oscillator.stop();
                             if (node.vibrato) node.vibrato.stop();
                         } catch (e) {
-                            // Node might already be stopped
                         }
                     });
                     this.backgroundMusicNodes = [];
                     
-                    // Reset music gain
                     this.musicGain.gain.setValueAtTime(0.6, this.context.currentTime);
                 }, 1000);
             }
@@ -273,11 +253,9 @@ export class AudioManager {
                 const { oscillator, gainNode } = sound;
                 this.fallingSoundNode = { oscillator, gainNode };
                 
-                // Create wind-like sound
                 gainNode.gain.setValueAtTime(0, this.context.currentTime);
                 gainNode.gain.linearRampToValueAtTime(0.08, this.context.currentTime + 0.5);
                 
-                // Modulate frequency for wind effect
                 const lfo = this.context.createOscillator();
                 const lfoGain = this.context.createGain();
                 lfo.frequency.setValueAtTime(0.5, this.context.currentTime);
@@ -311,7 +289,6 @@ export class AudioManager {
             playCrashSound() {
                 if (!this.context || !this.soundEnabled) return;
                 
-                // Create explosion-like sound
                 const noise = this.context.createBufferSource();
                 const buffer = this.context.createBuffer(1, this.context.sampleRate * 0.5, this.context.sampleRate);
                 const data = buffer.getChannelData(0);
@@ -342,8 +319,7 @@ export class AudioManager {
             playCashOutSound() {
                 if (!this.context || !this.soundEnabled) return;
                 
-                // Success sound - ascending notes
-                const frequencies = [262, 330, 392, 523]; // C, E, G, C
+                const frequencies = [262, 330, 392, 523]; 
                 
                 frequencies.forEach((freq, index) => {
                     const sound = this.createOscillator(freq, 'triangle', this.sfxGain);
@@ -367,7 +343,6 @@ export class AudioManager {
                     this.stopFallingSound();
                     this.stopBackgroundMusic();
                 } else if (this.backgroundMusicPlaying === false) {
-                    // Don't auto-start music, let game control it
                 }
                 return this.soundEnabled;
             }

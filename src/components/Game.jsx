@@ -2,7 +2,6 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { AudioManager } from '../utils/AudioManager';
 
 const Game = () => {
-    // React state to manage UI and game flow
     const [gameState, setGameState] = useState('start'); 
     const [score, setScore] = useState(0.0);
     const [gameOverInfo, setGameOverInfo] = useState({ title: '', scoreText: '' });
@@ -136,7 +135,9 @@ const Game = () => {
 
         const update = (deltaTime) => {
             logic.gameTime += deltaTime;
-            setScore(logic.gameTime / 1000);
+            // Slow down the score progression by dividing by a larger number
+            // This makes the score increase more slowly, giving players more time to react
+            setScore(logic.gameTime / 3000);
 
             if (logic.gameTime >= logic.crashTimer) {
                 crash(); // This function will set the game state
@@ -197,20 +198,22 @@ const Game = () => {
         };
     }, []); 
 
-     // Casino-style crash timing - 80% chance of crashing within 5 seconds, 95% within 10 seconds
-    const getCrashTime = () => {
+     const getCrashTime = () => {
         const rand = Math.random();
-        if (rand < 0.9) {
-            // 90% chance to crash within 1 seconds
-            return Math.random() * 1000;
-        } else if (rand < 0.98) {
-            // 8% chance to crash between 1-2 seconds
-            return 1000 + Math.random() * 2000;
+        const timeMultiplier = 3; // Match the 3x slower score progression
+    
+        if (rand < 0.85) {
+            // 85% chance to crash within 3 seconds (was 1 second)
+            return Math.random() * 1000 * timeMultiplier;
+        } else if (rand < 0.99) {
+            // 14% chance to crash between 3–6 seconds (was 1-2 seconds)
+            return (1000 * timeMultiplier) + (Math.random() * 1000 * timeMultiplier);
         } else {
-            // 2% chance to go beyond 2 seconds (up to 100 seconds)
-            return 2000 + Math.random() * 8000;
+            // 1% chance to crash between 6–15 seconds (was 2-5 seconds)
+            return (2000 * timeMultiplier) + (Math.random() * 3000 * timeMultiplier);
         }
     };
+    
 
 
     const crash = useCallback(async () => {
@@ -228,12 +231,10 @@ const Game = () => {
         setGameState('gameOver');
         setGameOverInfo({ title: '💥 Crashed!', scoreText: 'Final Score: 0.0x' });
         
-        // Stop sounds immediately
         audio.stopFallingSound();
         audio.stopBackgroundMusic();
         audio.playCrashSound();
         
-        // Clean up audio for next game after a short delay
         try {
             await new Promise(resolve => setTimeout(resolve, 500));
             await audio.cleanup();
@@ -245,12 +246,11 @@ const Game = () => {
     }, []);
 
     const startGame = useCallback(async () => {
-        if (isRestarting) return; // Prevent multiple rapid restarts
+        if (isRestarting) return; 
         
         setIsRestarting(true);
         const audio = audioManagerRef.current;
         
-        // First handle the game state
         const canvas = canvasRef.current;
         if (gameLogicRef.current) {
             gameLogicRef.current.gameTime = 0;
@@ -264,25 +264,19 @@ const Game = () => {
         setScore(0);
         setGameState('playing');
         
-        // Handle audio asynchronously after state is updated
         try {
-            // Clean up any existing audio state
             await audio.cleanup();
             
-            // Reinitialize audio with a small delay to ensure proper cleanup
             await new Promise(resolve => setTimeout(resolve, 50));
             
-            // Create a new AudioManager instance to ensure fresh state
             audioManagerRef.current = new AudioManager();
             const newAudio = audioManagerRef.current;
             
-            // Initialize audio
             const audioInitialized = await newAudio.initAudio();
             if (!audioInitialized) {
                 throw new Error('Failed to initialize audio');
             }
             
-            // Start audio with a small delay
             setTimeout(() => {
                 try {
                     newAudio.startBackgroundMusic();
@@ -295,7 +289,6 @@ const Game = () => {
         } catch (error) {
             console.error('Error initializing audio:', error);
         } finally {
-            // Always allow restarting, even if audio fails
             setIsRestarting(false);
         }
     }, []);
@@ -305,12 +298,10 @@ const Game = () => {
         setGameState('gameOver');
         setGameOverInfo({ title: '🎉 Cashed Out!', scoreText: `Final Score: ${score.toFixed(1)}x` });
         
-        // Stop sounds immediately
         audio.stopFallingSound();
         audio.stopBackgroundMusic();
         audio.playCashOutSound();
         
-        // Clean up audio for next game after a short delay
         try {
             await new Promise(resolve => setTimeout(resolve, 500));
             await audio.cleanup();
