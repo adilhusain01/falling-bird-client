@@ -339,12 +339,13 @@ const Game = () => {
 
       {gameState === 'start' && (
         <div className="start-screen">
-          <h1>🐦 Shishimaaro</h1>
+          <h1>🐦 Shishimaroo</h1>
           <p>
-            Help Shishimaaro fall through the clouds!<br />
-            Your score increases the longer you fall.<br />
-            Click "OUT" to cash in your score, or risk it all!<br />
-            If you crash, you lose everything!
+          Help Shishimaroo fall through the clouds!
+The longer you fall, the higher your score.
+Click "OUT" to cash out—
+but crash, and you lose it all!
+
           </p>
           <button className="start-button" onClick={startGame}>Start Falling</button>
           <button

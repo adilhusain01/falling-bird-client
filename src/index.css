@@ -204,7 +204,7 @@ body {
     box-shadow: 0 10px 25px rgba(78,205,196,0.4);
 }
 
-/* Mobile optimizations */
+
 @media (max-width: 480px) {
     .game-container {
         width: 95vw;
@@ -221,3 +221,4 @@ body {
         font-size: 14px;
     }
 }
+
