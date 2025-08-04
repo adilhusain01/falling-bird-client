@@ -13,7 +13,19 @@ function App() {
   const { authenticated, ready } = usePrivy();
 
   if (!ready) {
-    return <div>Loading...</div>;
+    return (
+      <div className="loading-container">
+        <div className="loading-content">
+          <div className="floating-spirit">🌟</div>
+          <div className="loading-text">Awakening the forest spirits...</div>
+          <div className="loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -30,10 +42,10 @@ function AppWrapper() {
   return (
     <QueryClientProvider client={queryClient}>
       <PrivyProvider
-        appId="cmdx3unrh01cuk10bwfqveom6" // Replace with your Privy App ID from the Privy Dashboard
+        appId="cmdx3unrh01cuk10bwfqveom6"
         config={{
           appearance: {
-            accentColor: '#6A6FF5',
+            accentColor: '#7dd3fc',
             theme: 'dark',
             showWalletLoginFirst: false,
             logo: '',

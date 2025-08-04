@@ -18,97 +18,60 @@ const Login = () => {
   };
 
   return (
-    <>
-      <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+    <div className="page-container">
+      {/* Floating magical elements */}
+      <div className="floating-elements">
+        <div className="floating-element">✨</div>
+        <div className="floating-element">🌸</div>
+        <div className="floating-element">🍃</div>
+        <div className="floating-element">⭐</div>
+      </div>
+
+      <div className="flex flex-col items-center justify-center w-full h-full p-6">
+        <div className="text-6xl mb-6" style={{ animation: 'gentle-float 3s ease-in-out infinite' }}>
+          🐦
+        </div>
         
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.1); }
-        }
-        
-        .animate-fade-in-up {
-          animation: fadeInUp 0.8s ease-out;
-        }
-        
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-        
-        .animate-pulse-scale {
-          animation: pulse 2s infinite;
-        }
-      `}</style>
-      <div className="page-container">
-        <div className="flex flex-col items-center justify-center h-full w-full p-5 text-center relative">
-          <div className="absolute -top-1/2 -left-1/2 w-full h-full opacity-0 transition-opacity duration-300 ease-in-out pointer-events-none"
-               style={{
-                 background: 'radial-gradient(circle, rgba(102, 126, 234, 0.15) 0%, transparent 70%)',
-                 width: '200%',
-                 height: '200%'
-               }}>
-          </div>
-          <div className="bg-slate-800 bg-opacity-85 rounded-3xl p-12 max-w-sm w-full shadow-2xl animate-fade-in-up backdrop-blur border border-white border-opacity-10"
-               style={{
-                 boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                 backdropFilter: 'blur(16px)'
-               }}>
-            <div className="mb-8 animate-float">
-              <div className="text-6xl mb-4 animate-pulse-scale" 
-                   style={{ filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))' }}>
-                🐦
-              </div>
-              <h1 className="text-white text-3xl font-bold mb-2 bg-gradient-to-r from-indigo-400 via-purple-400 to-purple-600 bg-clip-text text-transparent"
-                  style={{ letterSpacing: '-0.5px' }}>
-                Shishimaroo
-              </h1>
-            </div>
-            <p className="text-slate-400 text-base mb-10 max-w-xs leading-relaxed font-normal">
-              Connect your wallet to start falling through the clouds and earn rewards in this thrilling adventure!
-            </p>
-            <button
-              onClick={handleLogin}
-              disabled={isLoading}
-              className={`w-full py-4 px-8 text-base font-semibold text-white bg-gradient-to-r from-indigo-500 to-purple-600 border-none rounded-2xl cursor-pointer transition-all duration-300 shadow-lg relative overflow-hidden transform ${
-                isHovered && !isLoading 
-                  ? 'translate-y-0.5 shadow-xl bg-gradient-to-r from-purple-600 to-violet-600' 
-                  : 'translate-y-0'
-              } ${
-                isLoading 
-                  ? 'opacity-70 cursor-not-allowed' 
-                  : 'cursor-pointer'
-              }`}
-              style={{
-                boxShadow: isHovered && !isLoading 
-                  ? '0 12px 35px rgba(102, 126, 234, 0.4)' 
-                  : '0 8px 25px rgba(102, 126, 234, 0.25)'
-              }}
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
-            >
-              <span className="mr-3 text-xl animate-pulse-scale">
-                {isLoading ? '⏳' : '🔗'}
+        <div className="ghibli-card w-full max-w-sm p-8 text-center">
+          <h1 className="ghibli-title text-3xl mb-2">Shishimaroo</h1>
+          <p className="text-slate-600 text-sm mb-6" style={{ fontFamily: 'Kalam, cursive' }}>
+            ~ A Magical Adventure Awaits ~
+          </p>
+          
+          <button
+            onClick={handleLogin}
+            disabled={isLoading}
+            className={`ghibli-button ghibli-button-green w-full py-3 text-lg ${
+              isLoading ? 'opacity-70 cursor-not-allowed' : ''
+            }`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center">
+                <span className="mr-2">🌀</span>
+                <span>Summoning Magic...</span>
               </span>
-              {isLoading ? 'Connecting...' : 'Connect Wallet'}
-            </button>
+            ) : (
+              <span className="flex items-center justify-center">
+                <span className="mr-2">🔗</span>
+                <span>Login with Magic</span>
+              </span>
+            )}
+          </button>
+          
+          <div className="mt-6 flex justify-center gap-3 text-lg opacity-50">
+            <span style={{ animation: 'gentle-float 3s ease-in-out infinite' }}>🌿</span>
+            <span style={{ animation: 'gentle-float 3s ease-in-out infinite 0.5s' }}>🦋</span>
+            <span style={{ animation: 'gentle-float 3s ease-in-out infinite 1s' }}>🌺</span>
           </div>
         </div>
+        
+        <p className="mt-6 text-xs text-slate-500 opacity-70" style={{ fontFamily: 'Kalam, cursive' }}>
+          "In every cloud, there's a story waiting to unfold..."
+        </p>
       </div>
-    </>
+    </div>
   );
 };
 

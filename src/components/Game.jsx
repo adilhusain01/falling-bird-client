@@ -305,96 +305,97 @@ const Game = () => {
 
   return (
     <div className="page-container">
-      <div className="relative w-full h-full flex justify-center items-center">
-        <canvas 
-          ref={canvasRef} 
-          id="gameCanvas" 
-          width="360" 
-          height="640"
-          className="rounded-2xl shadow-2xl w-full h-full"
-          style={{
-            background: 'linear-gradient(180deg, #87CEEB 0%, #B0E0E6 100%)',
-            boxShadow: '0 15px 40px rgba(0,0,0,0.4)'
-          }}
-        />
-
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-10 p-5">
-          {gameState === 'playing' && (
-            <>
-              <div 
-                className="absolute text-white text-2xl font-bold pointer-events-none bg-black bg-opacity-30 px-4 py-2.5 rounded-2xl z-10 backdrop-blur-sm"
-                style={{
-                  top: '100px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  textShadow: '2px 2px 6px rgba(0,0,0,0.8)'
-                }}
-              >
-                Score: {score.toFixed(1)}x
-              </div>
-              <div 
-                className="absolute z-10"
-                style={{
-                  left: '65%',
-                  bottom: '160px',
-                  transform: 'translateX(-50%)'
-                }}
-              >
-                <button 
-                  className="bg-gradient-to-r from-red-400 to-red-500 text-white border-none px-5 py-3 rounded-2xl text-base font-bold cursor-pointer pointer-events-auto shadow-lg transition-all duration-300 ease-in-out uppercase backdrop-blur-sm hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0"
-                  style={{
-                    boxShadow: '0 5px 20px rgba(255,107,107,0.4)'
-                  }}
-                  onClick={cashOut}
-                >
-                  OUT
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-
-        {gameState === 'start' && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white bg-opacity-95 p-8 rounded-3xl text-center shadow-2xl pointer-events-auto backdrop-blur-lg w-11/12 max-w-sm"
-               style={{ boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
-            <h1 className="text-gray-800 mb-4 text-3xl">🐦 Shishimaroo</h1>
-            <button 
-              className="bg-gradient-to-r from-teal-400 to-teal-500 text-white border-none py-4 px-9 rounded-3xl text-lg font-bold cursor-pointer transition-all duration-300 ease-in-out w-full hover:-translate-y-0.5 hover:shadow-lg"
-              style={{ boxShadow: '0 8px 20px rgba(78,205,196,0.4)' }}
-              onClick={startGame}
-            >
-              Start Falling
-            </button>
-            <button
-              className="bg-indigo-500 text-white border-none py-4 px-8 rounded-3xl text-base font-bold cursor-pointer transition-all duration-300 ease-in-out w-full mt-2.5 hover:-translate-y-0.5 hover:shadow-lg"
-              onClick={() => navigate('/profile')}
-            >
-              View Profile
-            </button>
-          </div>
-        )}
-
-        {gameState === 'gameOver' && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white bg-opacity-95 p-8 rounded-3xl text-center shadow-2xl pointer-events-auto backdrop-blur-lg w-11/12 max-w-xs block"
-               style={{ boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
-            <h2 className="text-gray-800 mb-4 text-3xl">{gameOverInfo.title}</h2>
-            <div className="text-xl text-red-400 mb-6 font-bold">{gameOverInfo.scoreText}</div>
-            <button 
-              className="bg-gradient-to-r from-teal-400 to-teal-500 text-white border-none py-4 px-8 rounded-3xl text-base font-bold cursor-pointer transition-all duration-300 ease-in-out w-full hover:-translate-y-0.5 hover:shadow-lg"
-              style={{ boxShadow: '0 8px 20px rgba(78,205,196,0.4)' }}
-              onClick={startGame}
-            >
-              Play Again
-            </button>
-            <button
-              className="bg-indigo-500 text-white border-none py-4 px-8 rounded-3xl text-base font-bold cursor-pointer transition-all duration-300 ease-in-out w-full mt-2.5 hover:-translate-y-0.5 hover:shadow-lg"
-              onClick={() => navigate('/profile')}
-            >
-              View Profile
-            </button>
-          </div>
-        )}
+      {/* Floating magical elements */}
+      <div className="floating-elements">
+        <div className="floating-element">🐦</div>
+        <div className="floating-element">☁️</div>
+        <div className="floating-element">✨</div>
+        <div className="floating-element">🍃</div>
       </div>
+
+      <canvas 
+        ref={canvasRef} 
+        width={400} 
+        height={711} 
+        className="absolute top-0 left-0 w-full h-full" 
+      />
+      
+      {gameState === 'playing' && (
+        <>
+          {/* Score display at top */}
+          <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-10">
+            <div className="ghibli-card px-6 py-3">
+              <p className="ghibli-title text-lg text-center">
+                Score: {score.toFixed(1)}x
+              </p>
+            </div>
+          </div>
+          
+          {/* Cash Out button at bottom */}
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-xs px-4">
+            <button 
+              className="ghibli-button ghibli-button-red w-full py-3 text-lg"
+              onClick={cashOut}
+            >
+              Cash Out
+            </button>
+          </div>
+        </>
+      )}
+
+      {gameState === 'start' && (
+        <div className="flex flex-col items-center justify-center w-full h-full p-6 z-10">
+          <div className="text-6xl mb-6" style={{ animation: 'gentle-float 3s ease-in-out infinite' }}>
+            🐦
+          </div>
+          <div className="ghibli-card w-full max-w-sm p-8 text-center">
+            <h1 className="ghibli-title text-3xl mb-6">Shishimaroo</h1>
+            <p className="text-slate-600 mb-6">
+              Guide the bird through the clouds and cash out before it crashes!
+            </p>
+            <div className="space-y-4">
+              <button 
+                className="ghibli-button ghibli-button-green px-6 py-3 w-full text-lg"
+                onClick={startGame}
+              >
+                Start Falling
+              </button>
+              <button
+                className="ghibli-button px-6 py-3 w-full text-lg"
+                onClick={() => navigate('/profile')}
+              >
+                View Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {gameState === 'gameOver' && (
+        <div className="flex flex-col items-center justify-center w-full h-full p-6 z-10">
+          <div className="ghibli-card w-full max-w-sm p-8 text-center">
+            <h2 className="ghibli-title text-2xl mb-2">{gameOverInfo.title}</h2>
+            <p className="text-slate-700 text-xl font-bold mb-6">
+              {gameOverInfo.scoreText}
+            </p>
+            
+            <div className="space-y-4">
+              <button 
+                className="ghibli-button ghibli-button-green px-6 py-3 w-full text-lg"
+                onClick={startGame}
+              >
+                Play Again
+              </button>
+              <button
+                className="ghibli-button px-6 py-3 w-full text-lg"
+                onClick={() => navigate('/profile')}
+              >
+                View Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

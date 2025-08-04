@@ -16,20 +16,18 @@ const Profile = () => {
   useEffect(() => {
     const fetchWalletData = async () => {
       if (wallets.length > 0) {
-        const wallet = wallets[0]; // Use the first connected wallet
+        const wallet = wallets[0];
         try {
-          // Use wallet's provider if available, else fallback to external provider
           let provider;
           if (wallet.connector?.ethersProvider) {
             provider = wallet.connector.ethersProvider;
           } else {
-            provider = new ethers.JsonRpcProvider('https://mainnet.infura.io/v3/6aeb4bc17cfe49b5bf0fe4db13799d8a'); // Replace with your Infura ID
+            provider = new ethers.JsonRpcProvider('https://mainnet.infura.io/v3/6aeb4bc17cfe49b5bf0fe4db13799d8a');
           }
           const balanceWei = await provider.getBalance(wallet.address);
           const balanceEth = ethers.formatEther(balanceWei);
           setBalance(balanceEth);
 
-          // Get current chain ID
           const network = await provider.getNetwork();
           setCurrentChainId(`eip155:${network.chainId}`);
         } catch (err) {
@@ -49,7 +47,7 @@ const Profile = () => {
     }
 
     const wallet = wallets[0];
-    const targetChainId = chainId.split(':')[1]; // Extract numeric chain ID (e.g., '1' from 'eip155:1')
+    const targetChainId = chainId.split(':')[1];
 
     try {
       if (wallet.connector?.ethersProvider) {
@@ -115,107 +113,183 @@ const Profile = () => {
   if (!authenticated) {
     return (
       <div className="page-container">
-        <div className="flex flex-col items-center justify-start w-full h-full p-5 overflow-y-auto">
-          <h1 className="text-gray-800 text-3xl mb-4 text-center">🔐</h1>
-          <div className="w-full max-w-sm bg-white bg-opacity-90 rounded-2xl p-5 mb-4 shadow-lg">
-            <p className="text-gray-600 my-2 text-sm break-words">Please log in to view your profile.</p>
+        {/* Floating magical elements */}
+        <div className="floating-elements">
+          <div className="floating-element">🔮</div>
+          <div className="floating-element">🌙</div>
+          <div className="floating-element">✨</div>
+          <div className="floating-element">🌟</div>
+        </div>
+
+        <div className="flex flex-col items-center justify-center w-full h-full p-6">
+          <div className="text-6xl mb-6" style={{ animation: 'gentle-float 3s ease-in-out infinite' }}>
+            🔐
+          </div>
+          <div className="ghibli-card w-full max-w-sm p-6">
+            <h2 className="ghibli-title text-2xl mb-4 text-center">
+              Forbidden Forest
+            </h2>
+            <p className="text-slate-600 text-sm text-center" style={{ fontFamily: 'Comfortaa, cursive' }}>
+              The magical forest spirits require authentication to reveal the treasures within. 
+              Please return to the entrance and present your credentials.
+            </p>
           </div>
         </div>
       </div>
     );
   }
 
-  const wallet = wallets[0]; // Primary wallet
+  const wallet = wallets[0];
   const isButtonDisabled = (chainId) => 
     currentChainId === chainId || wallets.length === 0;
 
   return (
     <div className="page-container">
+      {/* Floating magical elements */}
+      <div className="floating-elements">
+        <div className="floating-element">💎</div>
+        <div className="floating-element">🦋</div>
+        <div className="floating-element">🌸</div>
+        <div className="floating-element">⭐</div>
+      </div>
+
       <div className="flex flex-col items-center justify-start w-full h-full p-5 overflow-y-auto">
-        <h1 className="text-gray-800 text-3xl mb-4 text-center">🐦 Profile</h1>
+        {/* Header */}
+        <div className="text-center mb-6">
+          <div className="text-5xl mb-2" style={{ animation: 'gentle-float 4s ease-in-out infinite' }}>🐦</div>
+          <h1 className="ghibli-title text-3xl">Adventurer's Codex</h1>
+          <div className="text-sm text-emerald-700 opacity-70 mt-1" style={{ fontFamily: 'Kalam, cursive' }}>
+            ~ Your Magical Compendium ~
+          </div>
+        </div>
         
-        <div className="w-full max-w-sm bg-white bg-opacity-90 rounded-2xl p-5 mb-4 shadow-lg">
-          <h2 className="text-xl text-gray-700 mb-4 text-center">Wallet Details</h2>
+        {/* Wallet Details Card */}
+        <div className="ghibli-card w-full max-w-sm p-6 mb-4 relative">
+          {/* Decorative corner elements */}
+          <div className="absolute top-2 right-2 text-lg opacity-30">🌿</div>
+          <div className="absolute bottom-2 left-2 text-lg opacity-30">🍃</div>
+          
+          <h2 className="ghibli-title text-xl mb-4 text-center flex items-center justify-center gap-2">
+            <span>💫</span> Spirit Wallet <span>💫</span>
+          </h2>
+          
           {wallet ? (
-            <div>
-              <p className="text-gray-600 my-2 text-sm break-words">
-                <strong>Address:</strong>
-                <div className="font-mono bg-black bg-opacity-5 px-2.5 py-1.5 rounded mt-1 break-all">
+            <div className="space-y-4">
+              <div className="p-3 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
+                <p className="text-slate-700 text-sm font-medium mb-1">
+                  🏠 Sanctuary Address:
+                </p>
+                <div className="font-mono text-xs bg-white bg-opacity-80 px-3 py-2 rounded-lg break-all border border-blue-200">
                   {wallet.address}
                 </div>
-              </p>
-              <p className="text-gray-600 my-2 text-sm break-words">
-                <strong>Network:</strong> {currentChainId?.split(':')[1] ? 
-                  `Ethereum ${currentChainId === 'eip155:1' ? 'Mainnet' : 'Sepolia Testnet'}` : 
-                  'Loading...'}
-              </p>
-              <p className="text-gray-600 my-2 text-sm break-words">
-                <strong>Balance:</strong> {balance ? 
-                  `${parseFloat(balance).toFixed(4)} ETH` : 'Loading...'}
-              </p>
+              </div>
+              
+              <div className="p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100">
+                <p className="text-slate-700 text-sm font-medium">
+                  🌍 Realm: {currentChainId?.split(':')[1] ? 
+                    `${currentChainId === 'eip155:1' ? 'Ethereum Mainnet' : 'Sepolia Testnet'}` : 
+                    'Discovering realm...'}
+                </p>
+              </div>
+              
+              <div className="p-3 rounded-xl bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-100">
+                <p className="text-slate-700 text-sm font-medium">
+                  💰 Treasure: {balance ? 
+                    `${parseFloat(balance).toFixed(4)} ETH` : 'Counting coins...'}
+                </p>
+              </div>
             </div>
           ) : (
-            <p className="text-gray-600 my-2 text-sm break-words">
-              No wallet connected. Please connect a wallet via the login interface.
-            </p>
+            <div className="text-center py-4">
+              <div className="text-4xl mb-3">🔍</div>
+              <p className="text-slate-600 text-sm" style={{ fontFamily: 'Comfortaa, cursive' }}>
+                No spirit wallet found in this realm. Please summon one through the portal entrance.
+              </p>
+            </div>
           )}
         </div>
 
-        <div className="w-full max-w-sm bg-white bg-opacity-90 rounded-2xl p-5 mb-4 shadow-lg">
-          <h2 className="text-xl text-gray-700 mb-4 text-center">Wallet Actions</h2>
-          <button
-            className={`w-full py-3.5 px-5 mb-3 rounded-3xl border-none text-base font-bold cursor-pointer transition-all duration-300 ease-in-out flex items-center justify-center gap-2 text-white ${
-              wallets.length === 0 
-                ? 'opacity-60 cursor-not-allowed bg-gradient-to-r from-teal-400 to-teal-500' 
-                : 'bg-gradient-to-r from-teal-400 to-teal-500'
-            }`}
-            onClick={handleFundWallet}
-            disabled={wallets.length === 0}
-          >
-            💰 Fund Wallet (MoonPay)
-          </button>
+        {/* Wallet Actions Card */}
+        <div className="ghibli-card w-full max-w-sm p-6 mb-4 relative">
+          {/* Decorative elements */}
+          <div className="absolute top-2 left-2 text-lg opacity-30">⚡</div>
+          <div className="absolute bottom-2 right-2 text-lg opacity-30">🔥</div>
           
-          <button
-            className={`w-full py-3.5 px-5 mb-3 rounded-3xl border-none text-base font-bold cursor-pointer transition-all duration-300 ease-in-out flex items-center justify-center gap-2 text-white ${
-              isButtonDisabled('eip155:1')
-                ? 'opacity-60 cursor-not-allowed bg-gradient-to-r from-teal-400 to-teal-500'
-                : 'bg-gradient-to-r from-teal-400 to-teal-500'
-            }`}
-            onClick={() => handleSwitchNetwork('eip155:1')}
-            disabled={isButtonDisabled('eip155:1')}
-          >
-            ⛓️ Ethereum Mainnet
-          </button>
+          <h2 className="ghibli-title text-xl mb-6 text-center flex items-center justify-center gap-2">
+            <span>🎭</span> Magical Actions <span>🎭</span>
+          </h2>
           
-          <button
-            className={`w-full py-3.5 px-5 mb-3 rounded-3xl border-none text-base font-bold cursor-pointer transition-all duration-300 ease-in-out flex items-center justify-center gap-2 text-white ${
-              isButtonDisabled('eip155:11155111')
-                ? 'opacity-60 cursor-not-allowed bg-gradient-to-r from-teal-400 to-teal-500'
-                : 'bg-gradient-to-r from-teal-400 to-teal-500'
-            }`}
-            onClick={() => handleSwitchNetwork('eip155:11155111')}
-            disabled={isButtonDisabled('eip155:11155111')}
-          >
-            ⛓️ Sepolia Testnet
-          </button>
+          <div className="space-y-3">
+            <button
+              className={`ghibli-button ghibli-button-green w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
+                wallets.length === 0 ? 'opacity-60 cursor-not-allowed' : ''
+              }`}
+              onClick={handleFundWallet}
+              disabled={wallets.length === 0}
+            >
+              <span className="text-xl">💰</span>
+              Fund with Moon Magic
+              <span className="text-xl">🌙</span>
+            </button>
+            
+            <button
+              className={`ghibli-button w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
+                isButtonDisabled('eip155:1') ? 'opacity-60 cursor-not-allowed' : ''
+              }`}
+              onClick={() => handleSwitchNetwork('eip155:1')}
+              disabled={isButtonDisabled('eip155:1')}
+            >
+              <span className="text-xl">🏰</span>
+              Ethereum Mainnet
+              <span className="text-xl">👑</span>
+            </button>
+            
+            <button
+              className={`ghibli-button w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
+                isButtonDisabled('eip155:11155111') ? 'opacity-60 cursor-not-allowed' : ''
+              }`}
+              onClick={() => handleSwitchNetwork('eip155:11155111')}
+              disabled={isButtonDisabled('eip155:11155111')}
+            >
+              <span className="text-xl">🌺</span>
+              Sepolia Testnet
+              <span className="text-xl">🦋</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex gap-2.5 w-full max-w-sm mt-2.5">
+        {/* Navigation Actions */}
+        <div className="flex gap-3 w-full max-w-sm mt-2">
           <button 
-            className="flex-1 py-3 px-5 rounded-3xl border-none text-base font-bold cursor-pointer transition-all duration-300 ease-in-out flex items-center justify-center gap-2 text-white bg-gradient-to-r from-red-400 to-red-500"
+            className="ghibli-button ghibli-button-red flex-1 py-3 px-4 text-base font-bold flex items-center justify-center gap-2"
             onClick={handleLogout}
           >
-            🔒 Log Out
+            <span className="text-lg">🚪</span>
+            Logout
           </button>
           <button 
-            className="flex-1 py-3 px-5 rounded-3xl border-none text-base font-bold cursor-pointer transition-all duration-300 ease-in-out flex items-center justify-center gap-2 text-white bg-gradient-to-r from-teal-400 to-teal-500"
+            className="ghibli-button flex-1 py-3 px-4 text-base font-bold flex items-center justify-center gap-2"
             onClick={() => navigate('/')}
           >
-            🎮 Back to Game
+            <span className="text-lg">🎮</span>
+            Home
           </button>
         </div>
 
-        {error && <p className="text-red-400 mt-4 text-center text-sm">{error}</p>}
+        {/* Error display */}
+        {error && (
+          <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-200 max-w-sm w-full">
+            <div className="flex items-center gap-2 text-red-600 text-sm text-center">
+              <span>⚠️</span>
+              <span style={{ fontFamily: 'Comfortaa, cursive' }}>{error}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Bottom decorative quote */}
+        <div className="mt-6 text-xs text-emerald-600 opacity-60 text-center max-w-xs" style={{ fontFamily: 'Kalam, cursive' }}>
+          "The winds carry more than just leaves... they carry dreams and possibilities."
+        </div>
       </div>
     </div>
   );
