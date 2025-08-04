@@ -34,9 +34,9 @@ function AppWrapper() {
         config={{
           appearance: {
             accentColor: '#6A6FF5',
-            theme: '#FFFFFF',
+            theme: 'dark',
             showWalletLoginFirst: false,
-            logo: 'https://auth.privy.io/logos/privy-logo.png',
+            logo: '',
             walletChainType: 'ethereum-only',
             walletList: [
               'detected_ethereum_wallets',
@@ -51,7 +51,6 @@ function AppWrapper() {
             'email',
             'wallet',
             'google',
-            'github'
           ],
           fundingMethodConfig: {
             moonpay: {
