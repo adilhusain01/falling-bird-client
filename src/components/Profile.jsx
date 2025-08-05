@@ -12,6 +12,14 @@ const Profile = () => {
   const [currentChainId, setCurrentChainId] = useState(null);
   const [error, setError] = useState(null);
 
+  const SOMNIA_TESTNET = {
+    chainId: 50312,
+    name: 'Somnia Testnet',
+    rpcUrl: 'https://dream-rpc.somnia.network/',
+    nativeCurrency: { name: 'STT', symbol: 'STT', decimals: 18 },
+    blockExplorerUrl: 'https://shannon-explorer.somnia.network/'
+  };
+
   // Fetch wallet balance and current chain
   useEffect(() => {
     const fetchWalletData = async () => {
@@ -22,7 +30,8 @@ const Profile = () => {
           if (wallet.connector?.ethersProvider) {
             provider = wallet.connector.ethersProvider;
           } else {
-            provider = new ethers.JsonRpcProvider('https://mainnet.infura.io/v3/6aeb4bc17cfe49b5bf0fe4db13799d8a');
+            // Default to Somnia testnet RPC
+            provider = new ethers.JsonRpcProvider(SOMNIA_TESTNET.rpcUrl);
           }
           const balanceWei = await provider.getBalance(wallet.address);
           const balanceEth = ethers.formatEther(balanceWei);
@@ -40,46 +49,65 @@ const Profile = () => {
   }, [wallets]);
 
   // Handle network switch
-  const handleSwitchNetwork = async (chainId) => {
+  const handleSwitchNetwork = async () => {
     if (wallets.length === 0) {
       setError('No wallet connected');
       return;
     }
 
     const wallet = wallets[0];
-    const targetChainId = chainId.split(':')[1];
 
     try {
       if (wallet.connector?.ethersProvider) {
         const provider = wallet.connector.ethersProvider;
-        await provider.send('wallet_switchEthereumChain', [{ chainId: `0x${parseInt(targetChainId).toString(16)}` }]);
-        setCurrentChainId(chainId);
-        setError(null);
+        
+        // Try to switch to Somnia testnet
+        try {
+          await provider.send('wallet_switchEthereumChain', [
+            { chainId: `0x${SOMNIA_TESTNET.chainId.toString(16)}` }
+          ]);
+          setCurrentChainId(`eip155:${SOMNIA_TESTNET.chainId}`);
+          setError(null);
+        } catch (switchError) {
+          // If network doesn't exist, add it
+          if (switchError.code === 4902) {
+            await provider.send('wallet_addEthereumChain', [
+              {
+                chainId: `0x${SOMNIA_TESTNET.chainId.toString(16)}`,
+                chainName: SOMNIA_TESTNET.name,
+                rpcUrls: [SOMNIA_TESTNET.rpcUrl],
+                nativeCurrency: SOMNIA_TESTNET.nativeCurrency,
+                blockExplorerUrls: [SOMNIA_TESTNET.blockExplorerUrl]
+              }
+            ]);
+            setCurrentChainId(`eip155:${SOMNIA_TESTNET.chainId}`);
+            setError(null);
+          } else {
+            throw switchError;
+          }
+        }
       } else {
         setError('Wallet does not support network switching');
       }
     } catch (err) {
-      if (err.code === 4902) {
-        try {
-          await wallet.connector.ethersProvider.send('wallet_addEthereumChain', [
-            {
-              chainId: `0x${parseInt(targetChainId).toString(16)}`,
-              chainName: targetChainId === '1' ? 'Ethereum Mainnet' : 'Sepolia Testnet',
-              rpcUrls: [targetChainId === '1' ? 'https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID' : 'https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID'],
-              nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-              blockExplorerUrls: [targetChainId === '1' ? 'https://etherscan.io' : 'https://sepolia.etherscan.io']
-            }
-          ]);
-          setCurrentChainId(chainId);
-          setError(null);
-        } catch (addErr) {
-          setError('Failed to add network');
-          console.error(addErr);
-        }
-      } else {
-        setError('Failed to switch network');
-        console.error(err);
-      }
+      setError('Failed to switch to Somnia testnet');
+      console.error(err);
+    }
+  };
+
+  const getNetworkDisplayName = () => {
+    if (!currentChainId) return 'Discovering realm...';
+    
+    const chainId = currentChainId.split(':')[1];
+    switch (chainId) {
+      case '50312':
+        return 'Somnia Testnet';
+      case '1':
+        return 'Ethereum Mainnet';
+      case '11155111':
+        return 'Sepolia Testnet';
+      default:
+        return `Chain ${chainId}`;
     }
   };
 
@@ -186,16 +214,14 @@ const Profile = () => {
               
               <div className="p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100">
                 <p className="text-slate-700 text-sm font-medium">
-                  🌍 Realm: {currentChainId?.split(':')[1] ? 
-                    `${currentChainId === 'eip155:1' ? 'Ethereum Mainnet' : 'Sepolia Testnet'}` : 
-                    'Discovering realm...'}
+                  🌍 Realm: {getNetworkDisplayName()}
                 </p>
               </div>
               
               <div className="p-3 rounded-xl bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-100">
                 <p className="text-slate-700 text-sm font-medium">
                   💰 Treasure: {balance ? 
-                    `${parseFloat(balance).toFixed(4)} ETH` : 'Counting coins...'}
+                    `${parseFloat(balance).toFixed(4)} SSM` : 'Counting coins...'}
                 </p>
               </div>
             </div>
@@ -234,27 +260,17 @@ const Profile = () => {
             
             <button
               className={`ghibli-button w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
-                isButtonDisabled('eip155:1') ? 'opacity-60 cursor-not-allowed' : ''
+                currentChainId === `eip155:${SOMNIA_TESTNET.chainId}` || wallets.length === 0 ? 'opacity-60 cursor-not-allowed' : ''
               }`}
-              onClick={() => handleSwitchNetwork('eip155:1')}
-              disabled={isButtonDisabled('eip155:1')}
+              onClick={handleSwitchNetwork}
+              disabled={currentChainId === `eip155:${SOMNIA_TESTNET.chainId}` || wallets.length === 0}
             >
               <span className="text-xl">🏰</span>
-              Ethereum Mainnet
+              Somnia Testnet
               <span className="text-xl">👑</span>
             </button>
             
-            <button
-              className={`ghibli-button w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
-                isButtonDisabled('eip155:11155111') ? 'opacity-60 cursor-not-allowed' : ''
-              }`}
-              onClick={() => handleSwitchNetwork('eip155:11155111')}
-              disabled={isButtonDisabled('eip155:11155111')}
-            >
-              <span className="text-xl">🌺</span>
-              Sepolia Testnet
-              <span className="text-xl">🦋</span>
-            </button>
+            
           </div>
         </div>
 
