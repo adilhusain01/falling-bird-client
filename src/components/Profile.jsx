@@ -8,7 +8,7 @@ const Profile = () => {
   const { wallets } = useWallets();
   const { logout } = useLogout();
   const navigate = useNavigate();
-  const [balance, setBalance] = useState(null);
+  const [balance, setBalance] = useState(1000); // Default balance for testing
   const [currentChainId, setCurrentChainId] = useState(null);
   const [error, setError] = useState(null);
 
@@ -220,8 +220,17 @@ const Profile = () => {
               
               <div className="p-3 rounded-xl bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-100">
                 <p className="text-slate-700 text-sm font-medium">
-                  💰 Treasure: {balance ? 
-                    `${parseFloat(balance).toFixed(4)} SSM` : 'Counting coins...'}
+                  💰 Treasure: {balance !== null ? 
+                    `${parseFloat(balance).toFixed(2)} SSM` : 'Counting coins...'}
+                </p>
+                <div className="mt-1 h-2 w-full bg-amber-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full"
+                    style={{ width: `${Math.min(100, (balance / 1000) * 100)}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-amber-600 mt-1">
+                  {balance >= 1000 ? '💰 Maxed out!' : `${Math.round((balance / 1000) * 100)}% to next level`}
                 </p>
               </div>
             </div>
@@ -288,7 +297,7 @@ const Profile = () => {
             onClick={() => navigate('/')}
           >
             <span className="text-lg">🎮</span>
-            Home
+            Play Game
           </button>
         </div>
 

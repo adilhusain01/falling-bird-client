@@ -1,12 +1,17 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AudioManager } from '../utils/AudioManager';
+import Slider from '@mui/material/Slider';
+import { styled } from '@mui/material/styles';
 
 const Game = () => {
-  const [gameState, setGameState] = useState('start');
+  const [gameState, setGameState] = useState('bidding');
   const [score, setScore] = useState(0.0);
   const [gameOverInfo, setGameOverInfo] = useState({ title: '', scoreText: '' });
   const [isRestarting, setIsRestarting] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(1000); // Initial wallet balance
+  const [bidAmount, setBidAmount] = useState(1);
+  const [currentBid, setCurrentBid] = useState(0);
   const navigate = useNavigate();
 
   const canvasRef = useRef(null);
@@ -224,8 +229,11 @@ const Game = () => {
       }
     }
 
+    // Update wallet balance (deduct bid amount)
+    setWalletBalance(prev => prev - currentBid);
     setGameState('gameOver');
-    setGameOverInfo({ title: '💥 Crashed!', scoreText: 'Final Score: 0.0x' });
+    setGameOverInfo({ title: '💥 Crashed!', scoreText: `Lost: ${currentBid} SSM` });
+    setCurrentBid(0);
 
     audio.stopFallingSound();
     audio.stopBackgroundMusic();
@@ -240,6 +248,13 @@ const Game = () => {
       setIsRestarting(false);
     }
   }, []);
+
+  const handleBidSubmit = () => {
+    if (bidAmount < 1 || bidAmount > walletBalance) return;
+    setCurrentBid(bidAmount);
+    setWalletBalance(prev => prev - bidAmount);
+    setGameState('start');
+  };
 
   const startGame = useCallback(async () => {
     if (isRestarting) return;
@@ -286,8 +301,18 @@ const Game = () => {
 
   const cashOut = useCallback(async () => {
     const audio = audioManagerRef.current;
+    const winnings = Math.floor(currentBid * score);
+    
+    // Update wallet balance (add winnings)
+    setWalletBalance(prev => prev + winnings);
+    
     setGameState('gameOver');
-    setGameOverInfo({ title: '🎉 Cashed Out!', scoreText: `Final Score: ${score.toFixed(1)}x` });
+    setGameOverInfo({ 
+      title: '🎉 Cashed Out!', 
+      scoreText: `Won: ${winnings} SSM (${score.toFixed(1)}x)` 
+    });
+    
+    setCurrentBid(0);
 
     audio.stopFallingSound();
     audio.stopBackgroundMusic();
@@ -322,12 +347,23 @@ const Game = () => {
       
       {gameState === 'playing' && (
         <>
-          {/* Score display at top */}
-          <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-10">
-            <div className="ghibli-card px-6 py-3">
-              <p className="ghibli-title text-lg text-center">
-                Score: {score.toFixed(1)}x
-              </p>
+          {/* Score and bid display at top */}
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-xs">
+            <div className="ghibli-card px-4 py-2 flex justify-between items-center">
+              <div className="text-center px-2">
+                <p className="ghibli-title text-sm text-slate-500">Bid</p>
+                <p className="text-lg font-bold">{currentBid} SSM</p>
+              </div>
+              <div className="h-8 w-px bg-slate-200 mx-2"></div>
+              <div className="text-center px-2">
+                <p className="ghibli-title text-sm text-slate-500">Multiplier</p>
+                <p className="text-lg font-bold">{score.toFixed(1)}x</p>
+              </div>
+              <div className="h-8 w-px bg-slate-200 mx-2"></div>
+              <div className="text-center px-2">
+                <p className="ghibli-title text-sm text-slate-500">Balance</p>
+                <p className="text-lg font-bold">{walletBalance} SSM</p>
+              </div>
             </div>
           </div>
           
@@ -343,6 +379,76 @@ const Game = () => {
         </>
       )}
 
+      {gameState === 'bidding' && (
+        <div className="flex flex-col items-center justify-center w-full h-full p-6 z-10">
+          <div className="text-6xl mb-6" style={{ animation: 'gentle-float 3s ease-in-out infinite' }}>
+            💰
+          </div>
+          <div className="ghibli-card w-full max-w-sm p-8 text-center">
+            <h1 className="ghibli-title text-3xl mb-6">Place Your Bid</h1>
+            <p className="text-slate-600 mb-6">
+              Available Balance: {walletBalance} SSM
+            </p>
+            
+            <div className="mb-6 px-4">
+              <div className="flex justify-between text-sm text-slate-500 mb-2">
+                <span>1 SSM</span>
+                <span>Max: {walletBalance} SSM</span>
+              </div>
+              <Slider
+                value={bidAmount}
+                min={1}
+                max={Math.max(1, walletBalance)}
+                step={1}
+                onChange={(e, value) => setBidAmount(value)}
+                valueLabelDisplay="auto"
+                valueLabelFormat={(value) => `${value} SSM`}
+                sx={{
+                  color: '#4f46e5',
+                  '& .MuiSlider-thumb': {
+                    width: 24,
+                    height: 24,
+                    backgroundColor: '#fff',
+                    border: '2px solid currentColor',
+                    '&:hover, &.Mui-focusVisible': {
+                      boxShadow: '0 0 0 8px rgba(79, 70, 229, 0.16)',
+                    },
+                    '&.Mui-active': {
+                      boxShadow: '0 0 0 14px rgba(79, 70, 229, 0.16)',
+                    },
+                  },
+                  '& .MuiSlider-rail': {
+                    opacity: 0.5,
+                    backgroundColor: '#bfdbfe',
+                  },
+                  '& .MuiSlider-track': {
+                    border: 'none',
+                  },
+                }}
+              />
+            </div>
+            
+            <div className="space-y-4">
+              <button 
+                className={`ghibli-button ghibli-button-green px-6 py-3 w-full text-lg ${
+                  walletBalance < 1 ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                onClick={handleBidSubmit}
+                disabled={walletBalance < 1}
+              >
+                {walletBalance < 1 ? 'Insufficient Balance' : `Bid ${bidAmount} SSM`}
+              </button>
+              <button
+                className="ghibli-button px-6 py-3 w-full text-lg"
+                onClick={() => navigate('/profile')}
+              >
+                View Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {gameState === 'start' && (
         <div className="flex flex-col items-center justify-center w-full h-full p-6 z-10">
           <div className="text-6xl mb-6" style={{ animation: 'gentle-float 3s ease-in-out infinite' }}>
@@ -351,7 +457,7 @@ const Game = () => {
           <div className="ghibli-card w-full max-w-sm p-8 text-center">
             <h1 className="ghibli-title text-3xl mb-6">Shishimaroo</h1>
             <p className="text-slate-600 mb-6">
-              Guide the bird through the clouds and cash out before it crashes!
+              Current Bid: {currentBid} SSM
             </p>
             <div className="space-y-4">
               <button 
@@ -362,9 +468,13 @@ const Game = () => {
               </button>
               <button
                 className="ghibli-button px-6 py-3 w-full text-lg"
-                onClick={() => navigate('/profile')}
+                onClick={() => {
+                  setWalletBalance(prev => prev + currentBid);
+                  setCurrentBid(0);
+                  setGameState('bidding');
+                }}
               >
-                View Profile
+                Change Bid
               </button>
             </div>
           </div>
@@ -382,9 +492,16 @@ const Game = () => {
             <div className="space-y-4">
               <button 
                 className="ghibli-button ghibli-button-green px-6 py-3 w-full text-lg"
-                onClick={startGame}
+                onClick={() => {
+                  if (walletBalance >= 1) {
+                    setGameState('bidding');
+                  } else {
+                    // If no balance, go to profile to add funds
+                    navigate('/profile');
+                  }
+                }}
               >
-                Play Again
+                {walletBalance >= 1 ? 'Play Again' : 'Add Funds'}
               </button>
               <button
                 className="ghibli-button px-6 py-3 w-full text-lg"
