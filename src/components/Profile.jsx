@@ -396,30 +396,9 @@ const Profile = () => {
             </button>
             
             {/* Fund Wallet Button */}
-            <button
-              className={`ghibli-button ghibli-button-green w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
-                wallets.length === 0 ? 'opacity-60 cursor-not-allowed' : ''
-              }`}
-              onClick={handleFundWallet}
-              disabled={wallets.length === 0}
-            >
-              <span className="text-xl">💰</span>
-              Fund with Moon Magic
-              <span className="text-xl">🌙</span>
-            </button>
+          
             
-            {/* Switch Network Button */}
-            <button
-              className={`ghibli-button w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
-                currentChainId === `eip155:${SOMNIA_TESTNET.chainId}` || wallets.length === 0 ? 'opacity-60 cursor-not-allowed' : ''
-              }`}
-              onClick={handleSwitchNetwork}
-              disabled={currentChainId === `eip155:${SOMNIA_TESTNET.chainId}` || wallets.length === 0}
-            >
-              <span className="text-xl">🏰</span>
-              Switch to Somnia
-              <span className="text-xl">👑</span>
-            </button>
+           
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 
 // GoofyBirdToken contract address on Somnia testnet
-export const CONTRACT_ADDRESS = '0x42C07c27BC76796F02c9775343bbD3005A527FaA';
+export const CONTRACT_ADDRESS = '0x693A7f60371D47462847388e7903570139eE3CA1';
 
 // Contract ABI - includes only the functions we need
 export const CONTRACT_ABI = [
