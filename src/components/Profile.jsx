@@ -1,16 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { usePrivy, useWallets, useLogout } from '@privy-io/react-auth';
+import { usePrivy, useWallets, useLogout, useSendTransaction } from '@privy-io/react-auth';
 import { useNavigate } from 'react-router-dom';
 import { ethers } from 'ethers';
+import { 
+  getTokenBalance, 
+  canClaimFaucet, 
+  getTimeUntilNextClaim, 
+  formatTimeRemaining,
+  getNativeBalance,
+  getClaimFaucetTransactionData
+} from '../utils/contractUtils';
 
 const Profile = () => {
-  const { user, authenticated, fundWallet } = usePrivy();
+  const { authenticated, fundWallet } = usePrivy();
   const { wallets } = useWallets();
   const { logout } = useLogout();
+  const { sendTransaction } = useSendTransaction();
   const navigate = useNavigate();
-  const [balance, setBalance] = useState(1000); // Default balance for testing
+  const [balance, setBalance] = useState('0'); // STT balance
+  const [tokenBalance, setTokenBalance] = useState('0'); // GBT token balance
+  const [canClaim, setCanClaim] = useState(false);
+  const [timeUntilClaim, setTimeUntilClaim] = useState(0);
   const [currentChainId, setCurrentChainId] = useState(null);
   const [error, setError] = useState(null);
+  const [isClaimingTokens, setIsClaimingTokens] = useState(false);
+  const [lastClaimTx, setLastClaimTx] = useState(null);
 
   const SOMNIA_TESTNET = {
     chainId: 50312,
@@ -20,7 +34,7 @@ const Profile = () => {
     blockExplorerUrl: 'https://shannon-explorer.somnia.network/'
   };
 
-  // Fetch wallet balance and current chain
+  // Fetch wallet balance, token balance, and faucet status
   useEffect(() => {
     const fetchWalletData = async () => {
       if (wallets.length > 0) {
@@ -33,20 +47,109 @@ const Profile = () => {
             // Default to Somnia testnet RPC
             provider = new ethers.JsonRpcProvider(SOMNIA_TESTNET.rpcUrl);
           }
-          const balanceWei = await provider.getBalance(wallet.address);
-          const balanceEth = ethers.formatEther(balanceWei);
-          setBalance(balanceEth);
 
+          // Fetch native balance (STT)
+          const nativeBalance = await getNativeBalance(provider, wallet.address);
+          setBalance(nativeBalance);
+
+          // Fetch token balance (GBT)
+          const gbtBalance = await getTokenBalance(provider, wallet.address);
+          setTokenBalance(gbtBalance);
+
+          // Check faucet eligibility
+          const canClaimFromFaucet = await canClaimFaucet(provider, wallet.address);
+          setCanClaim(canClaimFromFaucet);
+
+          // Get time until next claim if can't claim now
+          if (!canClaimFromFaucet) {
+            const timeUntilNext = await getTimeUntilNextClaim(provider, wallet.address);
+            setTimeUntilClaim(timeUntilNext);
+          }
+
+          // Get current chain ID
           const network = await provider.getNetwork();
           setCurrentChainId(`eip155:${network.chainId}`);
+          
+          setError(null);
         } catch (err) {
           setError('Failed to fetch wallet data');
           console.error(err);
         }
       }
     };
+    
     fetchWalletData();
-  }, [wallets]);
+    
+    // Set up interval to refresh faucet status every 30 seconds
+    const interval = setInterval(fetchWalletData, 30000);
+    
+    return () => clearInterval(interval);
+  }, [wallets, SOMNIA_TESTNET.rpcUrl]);
+
+  // Handle token claiming
+  const handleClaimTokens = async () => {
+    if (!wallets.length || !canClaim || isClaimingTokens) return;
+
+    const wallet = wallets[0];
+    setIsClaimingTokens(true);
+    setError(null);
+
+    try {
+      // Check if we're on Somnia testnet
+      if (currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}`) {
+        setError('Please switch to Somnia Testnet first');
+        setIsClaimingTokens(false);
+        return;
+      }
+
+      // Get transaction data for claiming faucet tokens
+      const txData = getClaimFaucetTransactionData();
+      
+      // Use Privy's sendTransaction to sign and send the transaction
+      const result = await sendTransaction(txData, {
+        address: wallet.address
+      });
+      
+      setLastClaimTx(result.transactionHash);
+      
+      // Wait a moment for the transaction to be processed
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Refresh balances after successful claim
+      let provider;
+      if (wallet.connector?.ethersProvider) {
+        provider = wallet.connector.ethersProvider;
+      } else {
+        provider = new ethers.JsonRpcProvider(SOMNIA_TESTNET.rpcUrl);
+      }
+      
+      const nativeBalance = await getNativeBalance(provider, wallet.address);
+      setBalance(nativeBalance);
+      
+      const gbtBalance = await getTokenBalance(provider, wallet.address);
+      setTokenBalance(gbtBalance);
+      
+      // Update faucet status
+      setCanClaim(false);
+      const timeUntilNext = await getTimeUntilNextClaim(provider, wallet.address);
+      setTimeUntilClaim(timeUntilNext);
+      
+      setError(null);
+    } catch (err) {
+      console.error('Error claiming tokens:', err);
+      if (err.message.includes('Faucet cooldown not met')) {
+        setError('You need to wait before claiming again');
+      } else if (err.message.includes('insufficient funds')) {
+        setError('Insufficient STT balance for gas fees');
+      } else if (err.message.includes('User rejected')) {
+        setError('Transaction was cancelled');
+      } else {
+        setError('Failed to claim tokens. Please try again.');
+      }
+    } finally {
+      setIsClaimingTokens(false);
+    }
+  };
 
   // Handle network switch
   const handleSwitchNetwork = async () => {
@@ -168,8 +271,6 @@ const Profile = () => {
   }
 
   const wallet = wallets[0];
-  const isButtonDisabled = (chainId) => 
-    currentChainId === chainId || wallets.length === 0;
 
   return (
     <div className="page-container">
@@ -220,17 +321,27 @@ const Profile = () => {
               
               <div className="p-3 rounded-xl bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-100">
                 <p className="text-slate-700 text-sm font-medium">
-                  💰 Treasure: {balance !== null ? 
-                    `${parseFloat(balance).toFixed(2)} SSM` : 'Counting coins...'}
+                  ⚡ STT Balance: {balance !== null ? 
+                    `${parseFloat(balance).toFixed(4)} STT` : 'Counting coins...'}
                 </p>
-                <div className="mt-1 h-2 w-full bg-amber-100 rounded-full overflow-hidden">
+                <p className="text-xs text-amber-600 mt-1">
+                  Used for gas fees on Somnia network
+                </p>
+              </div>
+              
+              <div className="p-3 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
+                <p className="text-slate-700 text-sm font-medium">
+                  🪙 GBT Tokens: {tokenBalance !== null ? 
+                    `${parseFloat(tokenBalance).toFixed(2)} GBT` : 'Loading...'}
+                </p>
+                <div className="mt-1 h-2 w-full bg-purple-100 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full"
-                    style={{ width: `${Math.min(100, (balance / 1000) * 100)}%` }}
+                    className="h-full bg-gradient-to-r from-purple-400 to-pink-500 rounded-full"
+                    style={{ width: `${Math.min(100, (parseFloat(tokenBalance) / 10000) * 100)}%` }}
                   ></div>
                 </div>
-                <p className="text-xs text-amber-600 mt-1">
-                  {balance >= 1000 ? '💰 Maxed out!' : `${Math.round((balance / 1000) * 100)}% to next level`}
+                <p className="text-xs text-purple-600 mt-1">
+                  Game currency for placing bets
                 </p>
               </div>
             </div>
@@ -255,6 +366,36 @@ const Profile = () => {
           </h2>
           
           <div className="space-y-3">
+            {/* Claim Tokens Button */}
+            <button
+              className={`ghibli-button w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
+                !canClaim || isClaimingTokens || wallets.length === 0 || currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}`
+                  ? 'opacity-60 cursor-not-allowed' 
+                  : 'ghibli-button-green'
+              }`}
+              onClick={handleClaimTokens}
+              disabled={!canClaim || isClaimingTokens || wallets.length === 0 || currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}`}
+            >
+              <span className="text-xl">🪙</span>
+              {isClaimingTokens ? (
+                <>
+                  <span className="animate-spin text-lg">🌀</span>
+                  Claiming...
+                </>
+              ) : canClaim ? (
+                <>
+                  Claim 1000 GBT
+                  <span className="text-xl">✨</span>
+                </>
+              ) : (
+                <>
+                  {formatTimeRemaining(timeUntilClaim)}
+                  <span className="text-xl">⏰</span>
+                </>
+              )}
+            </button>
+            
+            {/* Fund Wallet Button */}
             <button
               className={`ghibli-button ghibli-button-green w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
                 wallets.length === 0 ? 'opacity-60 cursor-not-allowed' : ''
@@ -267,6 +408,7 @@ const Profile = () => {
               <span className="text-xl">🌙</span>
             </button>
             
+            {/* Switch Network Button */}
             <button
               className={`ghibli-button w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
                 currentChainId === `eip155:${SOMNIA_TESTNET.chainId}` || wallets.length === 0 ? 'opacity-60 cursor-not-allowed' : ''
@@ -275,11 +417,9 @@ const Profile = () => {
               disabled={currentChainId === `eip155:${SOMNIA_TESTNET.chainId}` || wallets.length === 0}
             >
               <span className="text-xl">🏰</span>
-              Somnia Testnet
+              Switch to Somnia
               <span className="text-xl">👑</span>
             </button>
-            
-            
           </div>
         </div>
 
@@ -311,6 +451,23 @@ const Profile = () => {
           </div>
         )}
 
+        {/* Success message for token claims */}
+        {lastClaimTx && (
+          <div className="mt-4 p-3 rounded-xl bg-green-50 border border-green-200 max-w-sm w-full">
+            <div className="text-green-600 text-sm text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <span>🎉</span>
+                <span style={{ fontFamily: 'Comfortaa, cursive' }}>
+                  Successfully claimed 1000 GBT!
+                </span>
+              </div>
+              <div className="text-xs text-green-500 break-all">
+                Tx: {lastClaimTx}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Bottom decorative quote */}
         <div className="mt-6 text-xs text-emerald-600 opacity-60 text-center max-w-xs" style={{ fontFamily: 'Kalam, cursive' }}>
           "The winds carry more than just leaves... they carry dreams and possibilities."
@@ -321,3 +478,6 @@ const Profile = () => {
 };
 
 export default Profile;
+
+
+//0x42C07c27BC76796F02c9775343bbD3005A527FaA

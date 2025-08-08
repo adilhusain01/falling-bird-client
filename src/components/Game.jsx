@@ -1,17 +1,17 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AudioManager } from '../utils/AudioManager';
+import { useTokenBalance } from '../utils/useTokenBalance';
 import Slider from '@mui/material/Slider';
-import { styled } from '@mui/material/styles';
 
 const Game = () => {
   const [gameState, setGameState] = useState('bidding');
   const [score, setScore] = useState(0.0);
   const [gameOverInfo, setGameOverInfo] = useState({ title: '', scoreText: '' });
   const [isRestarting, setIsRestarting] = useState(false);
-  const [walletBalance, setWalletBalance] = useState(1000); // Initial wallet balance
   const [bidAmount, setBidAmount] = useState(1);
   const [currentBid, setCurrentBid] = useState(0);
+  const { tokenBalance, refetch: refetchBalance } = useTokenBalance();
   const navigate = useNavigate();
 
   const canvasRef = useRef(null);
@@ -23,6 +23,56 @@ const Game = () => {
   useEffect(() => {
     gameStateRef.current = gameState;
   }, [gameState]);
+
+  const getCrashTime = () => {
+    const rand = Math.random();
+    if (rand < 0.2) {
+      return Math.random() * 1000;
+    } else if (rand < 0.6) {
+      return 1000 + Math.random() * 4000;
+    } else {
+      return 5000 + Math.random() * 5000;
+    }
+  };
+
+  const crash = useCallback(async () => {
+    const audio = audioManagerRef.current;
+    if (!audio) return;
+
+    if (gameLogicRef.current) {
+      gameLogicRef.current.bird.crying = true;
+      for (let i = 0; i < 25; i++) {
+        gameLogicRef.current.particles.push({
+          x: gameLogicRef.current.bird.x,
+          y: gameLogicRef.current.bird.y,
+          vx: (Math.random() - 0.5) * 15,
+          vy: (Math.random() - 0.5) * 15,
+          life: 1,
+          color: `hsl(${Math.random() * 60 + 15}, 80%, 60%)`
+        });
+      }
+    }
+
+    // Note: In a real implementation, token balance would be updated via blockchain transactions
+    // For now, we just refresh the balance to get the latest state
+    refetchBalance();
+    setGameState('gameOver');
+    setGameOverInfo({ title: '💥 Crashed!', scoreText: `Lost: ${currentBid} GBT` });
+    setCurrentBid(0);
+
+    audio.stopFallingSound();
+    audio.stopBackgroundMusic();
+    audio.playCrashSound();
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await audio.cleanup();
+    } catch (e) {
+      console.error('Error during audio cleanup:', e);
+    } finally {
+      setIsRestarting(false);
+    }
+  }, [currentBid, refetchBalance]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -198,61 +248,11 @@ const Game = () => {
     return () => {
       cancelAnimationFrame(animationFrameId.current);
     };
-  }, []);
-
-  const getCrashTime = () => {
-    const rand = Math.random();
-    if (rand < 0.2) {
-      return Math.random() * 1000;
-    } else if (rand < 0.6) {
-      return 1000 + Math.random() * 4000;
-    } else {
-      return 5000 + Math.random() * 5000;
-    }
-  };
-
-  const crash = useCallback(async () => {
-    const audio = audioManagerRef.current;
-    if (!audio) return;
-
-    if (gameLogicRef.current) {
-      gameLogicRef.current.bird.crying = true;
-      for (let i = 0; i < 25; i++) {
-        gameLogicRef.current.particles.push({
-          x: gameLogicRef.current.bird.x,
-          y: gameLogicRef.current.bird.y,
-          vx: (Math.random() - 0.5) * 15,
-          vy: (Math.random() - 0.5) * 15,
-          life: 1,
-          color: `hsl(${Math.random() * 60 + 15}, 80%, 60%)`
-        });
-      }
-    }
-
-    // Update wallet balance (deduct bid amount)
-    setWalletBalance(prev => prev - currentBid);
-    setGameState('gameOver');
-    setGameOverInfo({ title: '💥 Crashed!', scoreText: `Lost: ${currentBid} SSM` });
-    setCurrentBid(0);
-
-    audio.stopFallingSound();
-    audio.stopBackgroundMusic();
-    audio.playCrashSound();
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await audio.cleanup();
-    } catch (e) {
-      console.error('Error during audio cleanup:', e);
-    } finally {
-      setIsRestarting(false);
-    }
-  }, []);
+  }, [crash]);
 
   const handleBidSubmit = () => {
-    if (bidAmount < 1 || bidAmount > walletBalance) return;
+    if (bidAmount < 1 || bidAmount > tokenBalance) return;
     setCurrentBid(bidAmount);
-    setWalletBalance(prev => prev - bidAmount);
     setGameState('start');
   };
 
@@ -297,19 +297,20 @@ const Game = () => {
     } finally {
       setIsRestarting(false);
     }
-  }, []);
+  }, [isRestarting]);
 
   const cashOut = useCallback(async () => {
     const audio = audioManagerRef.current;
     const winnings = Math.floor(currentBid * score);
     
-    // Update wallet balance (add winnings)
-    setWalletBalance(prev => prev + winnings);
+    // Note: In a real implementation, this would trigger a blockchain transaction
+    // to transfer winnings to the user's wallet
+    refetchBalance();
     
     setGameState('gameOver');
     setGameOverInfo({ 
       title: '🎉 Cashed Out!', 
-      scoreText: `Won: ${winnings} SSM (${score.toFixed(1)}x)` 
+      scoreText: `Won: ${winnings} GBT (${score.toFixed(1)}x)` 
     });
     
     setCurrentBid(0);
@@ -326,7 +327,7 @@ const Game = () => {
     } finally {
       setIsRestarting(false);
     }
-  }, [score]);
+  }, [score, currentBid, refetchBalance]);
 
   return (
     <div className="page-container">
@@ -362,7 +363,7 @@ const Game = () => {
               <div className="h-8 w-px bg-slate-200 mx-2"></div>
               <div className="text-center px-2">
                 <p className="ghibli-title text-sm text-slate-500">Balance</p>
-                <p className="text-lg font-bold">{walletBalance} SSM</p>
+                <p className="text-lg font-bold">{tokenBalance.toFixed(2)} GBT</p>
               </div>
             </div>
           </div>
@@ -387,22 +388,22 @@ const Game = () => {
           <div className="ghibli-card w-full max-w-sm p-8 text-center">
             <h1 className="ghibli-title text-3xl mb-6">Place Your Bid</h1>
             <p className="text-slate-600 mb-6">
-              Available Balance: {walletBalance} SSM
+              Available Balance: {tokenBalance.toFixed(2)} GBT
             </p>
             
             <div className="mb-6 px-4">
               <div className="flex justify-between text-sm text-slate-500 mb-2">
-                <span>1 SSM</span>
-                <span>Max: {walletBalance} SSM</span>
+                <span>1 GBT</span>
+                <span>Max: {Math.floor(tokenBalance)} GBT</span>
               </div>
               <Slider
                 value={bidAmount}
                 min={1}
-                max={Math.max(1, walletBalance)}
+                max={Math.max(1, Math.floor(tokenBalance))}
                 step={1}
                 onChange={(e, value) => setBidAmount(value)}
                 valueLabelDisplay="auto"
-                valueLabelFormat={(value) => `${value} SSM`}
+                valueLabelFormat={(value) => `${value} GBT`}
                 sx={{
                   color: '#4f46e5',
                   '& .MuiSlider-thumb': {
@@ -431,12 +432,12 @@ const Game = () => {
             <div className="space-y-4">
               <button 
                 className={`ghibli-button ghibli-button-green px-6 py-3 w-full text-lg ${
-                  walletBalance < 1 ? 'opacity-50 cursor-not-allowed' : ''
+                  tokenBalance < 1 ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
                 onClick={handleBidSubmit}
-                disabled={walletBalance < 1}
+                disabled={tokenBalance < 1}
               >
-                {walletBalance < 1 ? 'Insufficient Balance' : `Bid ${bidAmount} SSM`}
+                {tokenBalance < 1 ? 'Insufficient Balance' : `Bid ${bidAmount} GBT`}
               </button>
               <button
                 className="ghibli-button px-6 py-3 w-full text-lg"
@@ -457,7 +458,7 @@ const Game = () => {
           <div className="ghibli-card w-full max-w-sm p-8 text-center">
             <h1 className="ghibli-title text-3xl mb-6">Shishimaroo</h1>
             <p className="text-slate-600 mb-6">
-              Current Bid: {currentBid} SSM
+              Current Bid: {currentBid} GBT
             </p>
             <div className="space-y-4">
               <button 
@@ -469,7 +470,6 @@ const Game = () => {
               <button
                 className="ghibli-button px-6 py-3 w-full text-lg"
                 onClick={() => {
-                  setWalletBalance(prev => prev + currentBid);
                   setCurrentBid(0);
                   setGameState('bidding');
                 }}
@@ -493,7 +493,7 @@ const Game = () => {
               <button 
                 className="ghibli-button ghibli-button-green px-6 py-3 w-full text-lg"
                 onClick={() => {
-                  if (walletBalance >= 1) {
+                  if (tokenBalance >= 1) {
                     setGameState('bidding');
                   } else {
                     // If no balance, go to profile to add funds
@@ -501,7 +501,7 @@ const Game = () => {
                   }
                 }}
               >
-                {walletBalance >= 1 ? 'Play Again' : 'Add Funds'}
+                {tokenBalance >= 1 ? 'Play Again' : 'Add Funds'}
               </button>
               <button
                 className="ghibli-button px-6 py-3 w-full text-lg"
