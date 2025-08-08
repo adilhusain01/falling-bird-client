@@ -15,6 +15,8 @@ export const CONTRACT_ABI = [
   
   // Write functions
   'function claimFaucet() external',
+  'function transfer(address to, uint256 amount) returns (bool)',
+  'function burn(uint256 amount) external',
   
   // Events
   'event FaucetClaim(address indexed user, uint256 amount)',
@@ -91,7 +93,7 @@ export const claimFaucetTokens = async (signer) => {
 };
 
 /**
- * Get transaction data for claiming faucet tokens (for use with Privy signTransaction)
+ * Get transaction data for claiming faucet tokens (for use with Privy sendTransaction)
  */
 export const getClaimFaucetTransactionData = () => {
   const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI);
@@ -103,6 +105,50 @@ export const getClaimFaucetTransactionData = () => {
     value: '0x0' // No ETH value needed for this transaction
   };
 };
+
+/**
+ * Get transaction data for burning tokens (bet loss)
+ * This burns tokens from the user's wallet to simulate a loss
+ */
+export const getBurnTokensTransactionData = (amount) => {
+  const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI);
+  const amountWei = ethers.parseEther(amount.toString());
+  const data = contract.interface.encodeFunctionData('burn', [amountWei]);
+  
+  return {
+    to: CONTRACT_ADDRESS,
+    data: data,
+    value: '0x0'
+  };
+};
+
+/**
+ * Burn tokens from user's wallet (used for bet losses)
+ * @param {*} signer - Wallet signer
+ * @param {number} amount - Amount of tokens to burn
+ */
+export const burnTokens = async (signer, amount) => {
+  try {
+    const contract = getContractWithSigner(signer);
+    const amountWei = ethers.parseEther(amount.toString());
+    const tx = await contract.burn(amountWei);
+    return tx;
+  } catch (error) {
+    console.error('Error burning tokens:', error);
+    throw error;
+  }
+};
+
+/**
+ * For wins, we can't mint tokens directly (only owner can), 
+ * so we'll use a different approach - either:
+ * 1. Transfer from a treasury wallet (if available)
+ * 2. Just don't deduct anything (let them keep their bet)
+ * 3. Use a reward pool system
+ * 
+ * For now, let's implement approach #2 - no deduction on wins
+ * and approach using burn on losses
+ */
 
 /**
  * Format time remaining in human readable format

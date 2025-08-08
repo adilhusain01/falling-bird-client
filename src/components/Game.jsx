@@ -1,7 +1,9 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useWallets, useSendTransaction } from '@privy-io/react-auth';
 import { AudioManager } from '../utils/AudioManager';
 import { useTokenBalance } from '../utils/useTokenBalance';
+import { GameBettingService } from '../utils/gameBetting';
 import Slider from '@mui/material/Slider';
 
 const Game = () => {
@@ -11,7 +13,11 @@ const Game = () => {
   const [isRestarting, setIsRestarting] = useState(false);
   const [bidAmount, setBidAmount] = useState(1);
   const [currentBid, setCurrentBid] = useState(0);
+  const [betTxHash, setBetTxHash] = useState(null);
+  const [isPlacingBet, setIsPlacingBet] = useState(false);
   const { tokenBalance, refetch: refetchBalance } = useTokenBalance();
+  const { wallets } = useWallets();
+  const { sendTransaction } = useSendTransaction();
   const navigate = useNavigate();
 
   const canvasRef = useRef(null);
@@ -53,16 +59,28 @@ const Game = () => {
       }
     }
 
-    // Note: In a real implementation, token balance would be updated via blockchain transactions
-    // For now, we just refresh the balance to get the latest state
-    refetchBalance();
+    // Handle loss using betting service
+    if (wallets.length > 0 && betTxHash) {
+      try {
+        const bettingService = new GameBettingService(sendTransaction, wallets[0]);
+        const lossResult = await bettingService.handleLoss(currentBid, betTxHash);
+        console.log('Loss processed:', lossResult);
+      } catch (error) {
+        console.error('Error processing loss:', error);
+      }
+    }
+
     setGameState('gameOver');
     setGameOverInfo({ title: '💥 Crashed!', scoreText: `Lost: ${currentBid} GBT` });
     setCurrentBid(0);
+    setBetTxHash(null);
 
     audio.stopFallingSound();
     audio.stopBackgroundMusic();
     audio.playCrashSound();
+
+    // Refresh balance to show updated amount
+    refetchBalance();
 
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -72,7 +90,7 @@ const Game = () => {
     } finally {
       setIsRestarting(false);
     }
-  }, [currentBid, refetchBalance]);
+  }, [currentBid, refetchBalance, wallets, betTxHash, sendTransaction]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -250,10 +268,37 @@ const Game = () => {
     };
   }, [crash]);
 
-  const handleBidSubmit = () => {
-    if (bidAmount < 1 || bidAmount > tokenBalance) return;
-    setCurrentBid(bidAmount);
-    setGameState('start');
+  const handleBidSubmit = async () => {
+    if (bidAmount < 1 || bidAmount > tokenBalance || isPlacingBet) return;
+    
+    if (!wallets.length) {
+      console.error('No wallet connected');
+      return;
+    }
+
+    setIsPlacingBet(true);
+    
+    try {
+      // Create betting service instance
+      const bettingService = new GameBettingService(sendTransaction, wallets[0]);
+      
+      // Place bet on blockchain (burns tokens)
+      const txHash = await bettingService.placeBet(bidAmount);
+      setBetTxHash(txHash);
+      
+      // Set current bid and move to start screen
+      setCurrentBid(bidAmount);
+      setGameState('start');
+      
+      // Refresh balance after bet placement
+      refetchBalance();
+      
+    } catch (error) {
+      console.error('Error placing bet:', error);
+      // Handle error - maybe show an error message to user
+    } finally {
+      setIsPlacingBet(false);
+    }
   };
 
   const startGame = useCallback(async () => {
@@ -301,23 +346,46 @@ const Game = () => {
 
   const cashOut = useCallback(async () => {
     const audio = audioManagerRef.current;
-    const winnings = Math.floor(currentBid * score);
+    const winMultiplier = score;
     
-    // Note: In a real implementation, this would trigger a blockchain transaction
-    // to transfer winnings to the user's wallet
-    refetchBalance();
-    
-    setGameState('gameOver');
-    setGameOverInfo({ 
-      title: '🎉 Cashed Out!', 
-      scoreText: `Won: ${winnings} GBT (${score.toFixed(1)}x)` 
-    });
+    // Handle win using betting service
+    if (wallets.length > 0) {
+      try {
+        const bettingService = new GameBettingService(sendTransaction, wallets[0]);
+        const winResult = await bettingService.handleWin(currentBid, winMultiplier);
+        console.log('Win processed:', winResult);
+        
+        setGameState('gameOver');
+        setGameOverInfo({ 
+          title: '🎉 Cashed Out!', 
+          scoreText: `Won: ${winResult.winnings} GBT (${winMultiplier.toFixed(1)}x)` 
+        });
+      } catch (error) {
+        console.error('Error processing win:', error);
+        // Fallback to simple display
+        setGameState('gameOver');
+        setGameOverInfo({ 
+          title: '🎉 Cashed Out!', 
+          scoreText: `Multiplier: ${winMultiplier.toFixed(1)}x` 
+        });
+      }
+    } else {
+      setGameState('gameOver');
+      setGameOverInfo({ 
+        title: '🎉 Cashed Out!', 
+        scoreText: `Multiplier: ${winMultiplier.toFixed(1)}x` 
+      });
+    }
     
     setCurrentBid(0);
+    setBetTxHash(null);
 
     audio.stopFallingSound();
     audio.stopBackgroundMusic();
     audio.playCashOutSound();
+
+    // Refresh balance (though for wins, balance doesn't change in current implementation)
+    refetchBalance();
 
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -327,7 +395,7 @@ const Game = () => {
     } finally {
       setIsRestarting(false);
     }
-  }, [score, currentBid, refetchBalance]);
+  }, [score, currentBid, refetchBalance, wallets, sendTransaction]);
 
   return (
     <div className="page-container">
@@ -432,12 +500,21 @@ const Game = () => {
             <div className="space-y-4">
               <button 
                 className={`ghibli-button ghibli-button-green px-6 py-3 w-full text-lg ${
-                  tokenBalance < 1 ? 'opacity-50 cursor-not-allowed' : ''
+                  tokenBalance < 1 || isPlacingBet ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
                 onClick={handleBidSubmit}
-                disabled={tokenBalance < 1}
+                disabled={tokenBalance < 1 || isPlacingBet}
               >
-                {tokenBalance < 1 ? 'Insufficient Balance' : `Bid ${bidAmount} GBT`}
+                {isPlacingBet ? (
+                  <span className="flex items-center justify-center">
+                    <span className="animate-spin mr-2">🌀</span>
+                    Placing Bet...
+                  </span>
+                ) : tokenBalance < 1 ? (
+                  'Insufficient Balance'
+                ) : (
+                  `Bid ${bidAmount} GBT`
+                )}
               </button>
               <button
                 className="ghibli-button px-6 py-3 w-full text-lg"
