@@ -8,7 +8,9 @@ import {
   getTimeUntilNextClaim, 
   formatTimeRemaining,
   getNativeBalance,
-  getClaimFaucetTransactionData
+  getClaimFaucetTransactionData,
+  getPendingWinnings,
+  getClaimWinningsTransactionData
 } from '../utils/contractUtils';
 
 const Profile = () => {
@@ -19,12 +21,15 @@ const Profile = () => {
   const navigate = useNavigate();
   const [balance, setBalance] = useState('0'); // STT balance
   const [tokenBalance, setTokenBalance] = useState('0'); // GBT token balance
+  const [pendingWinnings, setPendingWinnings] = useState('0'); // Pending winnings
   const [canClaim, setCanClaim] = useState(false);
   const [timeUntilClaim, setTimeUntilClaim] = useState(0);
   const [currentChainId, setCurrentChainId] = useState(null);
   const [error, setError] = useState(null);
   const [isClaimingTokens, setIsClaimingTokens] = useState(false);
+  const [isClaimingWinnings, setIsClaimingWinnings] = useState(false);
   const [lastClaimTx, setLastClaimTx] = useState(null);
+  const [lastWinningsTx, setLastWinningsTx] = useState(null);
 
   const SOMNIA_TESTNET = {
     chainId: 50312,
@@ -52,9 +57,13 @@ const Profile = () => {
           const nativeBalance = await getNativeBalance(provider, wallet.address);
           setBalance(nativeBalance);
 
-          // Fetch token balance (GBT)
-          const gbtBalance = await getTokenBalance(provider, wallet.address);
+          // Fetch token balance (GBT) and pending winnings
+          const [gbtBalance, winnings] = await Promise.all([
+            getTokenBalance(provider, wallet.address),
+            getPendingWinnings(provider, wallet.address)
+          ]);
           setTokenBalance(gbtBalance);
+          setPendingWinnings(winnings);
 
           // Check faucet eligibility
           const canClaimFromFaucet = await canClaimFaucet(provider, wallet.address);
@@ -85,6 +94,69 @@ const Profile = () => {
     
     return () => clearInterval(interval);
   }, [wallets, SOMNIA_TESTNET.rpcUrl]);
+
+  // Handle winnings claiming
+  const handleClaimWinnings = async () => {
+    if (!wallets.length || isClaimingWinnings || parseFloat(pendingWinnings) <= 0) return;
+
+    const wallet = wallets[0];
+    setIsClaimingWinnings(true);
+    setError(null);
+
+    try {
+      // Check if we're on Somnia testnet
+      if (currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}`) {
+        setError('Please switch to Somnia Testnet first');
+        setIsClaimingWinnings(false);
+        return;
+      }
+
+      // Get transaction data for claiming winnings
+      const txData = getClaimWinningsTransactionData();
+      
+      // Use Privy's sendTransaction to sign and send the transaction
+      const result = await sendTransaction(txData, {
+        address: wallet.address
+      });
+      
+      setLastWinningsTx(result.transactionHash);
+      
+      // Wait a moment for the transaction to be processed
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Refresh balances after successful claim
+      let provider;
+      if (wallet.connector?.ethersProvider) {
+        provider = wallet.connector.ethersProvider;
+      } else {
+        provider = new ethers.JsonRpcProvider(SOMNIA_TESTNET.rpcUrl);
+      }
+      
+      const [nativeBalance, gbtBalance, winnings] = await Promise.all([
+        getNativeBalance(provider, wallet.address),
+        getTokenBalance(provider, wallet.address),
+        getPendingWinnings(provider, wallet.address)
+      ]);
+      setBalance(nativeBalance);
+      setTokenBalance(gbtBalance);
+      setPendingWinnings(winnings);
+      
+      setError(null);
+    } catch (err) {
+      console.error('Error claiming winnings:', err);
+      if (err.message.includes('No winnings to claim')) {
+        setError('No winnings available to claim');
+      } else if (err.message.includes('insufficient funds')) {
+        setError('Insufficient STT balance for gas fees');
+      } else if (err.message.includes('User rejected')) {
+        setError('Transaction was cancelled');
+      } else {
+        setError('Failed to claim winnings. Please try again.');
+      }
+    } finally {
+      setIsClaimingWinnings(false);
+    }
+  };
 
   // Handle token claiming
   const handleClaimTokens = async () => {
@@ -123,11 +195,14 @@ const Profile = () => {
         provider = new ethers.JsonRpcProvider(SOMNIA_TESTNET.rpcUrl);
       }
       
-      const nativeBalance = await getNativeBalance(provider, wallet.address);
+      const [nativeBalance, gbtBalance, winnings] = await Promise.all([
+        getNativeBalance(provider, wallet.address),
+        getTokenBalance(provider, wallet.address),
+        getPendingWinnings(provider, wallet.address)
+      ]);
       setBalance(nativeBalance);
-      
-      const gbtBalance = await getTokenBalance(provider, wallet.address);
       setTokenBalance(gbtBalance);
+      setPendingWinnings(winnings);
       
       // Update faucet status
       setCanClaim(false);
@@ -344,6 +419,20 @@ const Profile = () => {
                   Game tokens for Catch Goofy
                 </p>
               </div>
+              
+              {parseFloat(pendingWinnings) > 0 && (
+                <div className="p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
+                  <p className="text-slate-700 text-sm font-medium flex items-center gap-2">
+                    🏆 Pending Winnings: {parseFloat(pendingWinnings).toFixed(2)} GBT
+                    <span className="text-xs bg-green-200 text-green-700 px-2 py-1 rounded-full animate-pulse">
+                      Ready to claim!
+                    </span>
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    Winnings from your successful bets
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-4">
@@ -366,6 +455,32 @@ const Profile = () => {
           </h2>
           
           <div className="space-y-3">
+            {/* Claim Winnings Button */}
+            {parseFloat(pendingWinnings) > 0 && (
+              <button
+                className={`ghibli-button ghibli-button-green w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
+                  isClaimingWinnings || wallets.length === 0 || currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}`
+                    ? 'opacity-60 cursor-not-allowed' 
+                    : ''
+                }`}
+                onClick={handleClaimWinnings}
+                disabled={isClaimingWinnings || wallets.length === 0 || currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}`}
+              >
+                <span className="text-xl">🏆</span>
+                {isClaimingWinnings ? (
+                  <>
+                    <span className="animate-spin text-lg">🌀</span>
+                    Claiming Winnings...
+                  </>
+                ) : (
+                  <>
+                    Claim {parseFloat(pendingWinnings).toFixed(2)} GBT
+                    <span className="text-xl">✨</span>
+                  </>
+                )}
+              </button>
+            )}
+            
             {/* Claim Tokens Button */}
             <button
               className={`ghibli-button w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
@@ -430,6 +545,23 @@ const Profile = () => {
           </div>
         )}
 
+        {/* Success message for winnings claims */}
+        {lastWinningsTx && (
+          <div className="mt-4 p-3 rounded-xl bg-green-50 border border-green-200 max-w-sm w-full">
+            <div className="text-green-600 text-sm text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <span>🏆</span>
+                <span style={{ fontFamily: 'Comfortaa, cursive' }}>
+                  Successfully claimed your winnings!
+                </span>
+              </div>
+              <div className="text-xs text-green-500 break-all">
+                Tx: {lastWinningsTx}
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Success message for token claims */}
         {lastClaimTx && (
           <div className="mt-4 p-3 rounded-xl bg-green-50 border border-green-200 max-w-sm w-full">

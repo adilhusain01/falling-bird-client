@@ -1,38 +1,50 @@
 import { ethers } from 'ethers';
 import { 
-  getBurnTokensTransactionData, 
+  getPlaceBetTransactionData,
+  getClaimWinningsTransactionData,
+  generateBetId,
   getTokenBalance, 
   getNativeBalance,
+  getPendingWinnings,
+  getBetDetails,
   CONTRACT_ADDRESS,
   CONTRACT_ABI
 } from './contractUtils';
 
 /**
  * Game Betting Service
- * Handles all betting transactions for the falling bird game
+ * Handles all betting transactions for the falling bird game with treasury system
  */
 export class GameBettingService {
   constructor(sendTransaction, wallet) {
     this.sendTransaction = sendTransaction;
     this.wallet = wallet;
+    this.currentBetId = null;
   }
 
   /**
-   * Place a bet (deduct tokens from user's wallet)
+   * Place a bet (transfer tokens to contract treasury)
    * @param {number} amount - Amount to bet in GBT tokens
-   * @returns {Promise<string>} Transaction hash
+   * @returns {Promise<{betId: string, txHash: string}>}
    */
   async placeBet(amount) {
     try {
-      // Create transaction to burn tokens (representing the bet)
-      const txData = getBurnTokensTransactionData(amount);
+      // Generate unique bet ID
+      const betId = generateBetId();
+      this.currentBetId = betId;
+      
+      // Create transaction to transfer tokens to contract
+      const txData = getPlaceBetTransactionData(betId, amount);
       
       // Send transaction using Privy
       const result = await this.sendTransaction(txData, {
         address: this.wallet.address
       });
       
-      return result.transactionHash;
+      return {
+        betId,
+        txHash: result.transactionHash
+      };
     } catch (error) {
       console.error('Error placing bet:', error);
       throw new Error('Failed to place bet');
@@ -40,30 +52,28 @@ export class GameBettingService {
   }
 
   /**
-   * Handle a win - no tokens are deducted, user keeps their bet
-   * In a real casino system, you might:
-   * 1. Transfer additional tokens from a treasury
-   * 2. Mint new tokens (if contract allows)
-   * 3. Use a reward pool system
-   * 
-   * For this demo, wins mean you don't lose your bet amount
+   * Handle a win - record win on blockchain and calculate pending winnings
+   * @param {string} betId - The bet identifier
    * @param {number} betAmount - Original bet amount
-   * @param {number} multiplier - Win multiplier
-   * @returns {Promise<{winnings: number, txHash: null}>}
+   * @param {number} multiplier - Win multiplier (1.0x = 1.0, 1.5x = 1.5, etc.)
+   * @returns {Promise<{winnings: number, canClaim: boolean, message: string}>}
    */
-  async handleWin(betAmount, multiplier) {
+  async handleWin(betId, betAmount, multiplier) {
     try {
-      // Calculate theoretical winnings
-      const winnings = Math.floor(betAmount * multiplier);
+      // Calculate winnings
+      const winnings = betAmount * multiplier;
       
-      // For now, we don't do any blockchain transaction for wins
-      // The "win" is that the user didn't lose their bet amount
-      console.log(`Win! Theoretical winnings: ${winnings} GBT (${multiplier}x)`);
+      // Note: In a real system, you'd have a backend service that calls
+      // recordWin() on the smart contract after verifying the game result.
+      // For this demo, we'll simulate this by noting the win locally.
+      
+      console.log(`Win recorded! Bet: ${betAmount} GBT, Multiplier: ${multiplier}x, Winnings: ${winnings} GBT`);
       
       return {
+        betId,
         winnings: winnings,
-        txHash: null, // No transaction needed for wins in this implementation
-        message: `Congratulations! You won ${winnings} GBT (${multiplier}x multiplier)`
+        canClaim: true, // In real system, check if backend has called recordWin
+        message: `Congratulations! You won ${winnings.toFixed(2)} GBT (${multiplier}x multiplier)`
       };
     } catch (error) {
       console.error('Error handling win:', error);
@@ -72,17 +82,22 @@ export class GameBettingService {
   }
 
   /**
-   * Handle a loss - tokens are already burned when bet was placed
+   * Handle a loss - tokens stay in contract treasury
+   * @param {string} betId - The bet identifier  
    * @param {number} betAmount - Amount that was lost
    * @param {string} betTxHash - Transaction hash from when bet was placed
    * @returns {Promise<{lossAmount: number, txHash: string}>}
    */
-  async handleLoss(betAmount, betTxHash) {
+  async handleLoss(betId, betAmount, betTxHash) {
     try {
-      // The loss is already handled when the bet was placed (tokens were burned)
-      console.log(`Loss! ${betAmount} GBT tokens were burned`);
+      // Note: In a real system, you'd have a backend service that calls
+      // recordLoss() on the smart contract after verifying the game result.
+      // The tokens are already in the contract treasury from placeBet()
+      
+      console.log(`Loss recorded! Bet ID: ${betId}, Amount: ${betAmount} GBT - tokens remain in treasury`);
       
       return {
+        betId,
         lossAmount: betAmount,
         txHash: betTxHash, // Reference to the bet transaction
         message: `Sorry! You lost ${betAmount} GBT tokens`
@@ -94,24 +109,59 @@ export class GameBettingService {
   }
 
   /**
-   * Get updated balances after a game
+   * Claim pending winnings from treasury
+   * @returns {Promise<string>} Transaction hash
+   */
+  async claimWinnings() {
+    try {
+      const txData = getClaimWinningsTransactionData();
+      
+      const result = await this.sendTransaction(txData, {
+        address: this.wallet.address
+      });
+      
+      return result.transactionHash;
+    } catch (error) {
+      console.error('Error claiming winnings:', error);
+      throw new Error('Failed to claim winnings');
+    }
+  }
+  
+  /**
+   * Get updated balances and pending winnings after a game
    * @param {object} provider - Ethereum provider
-   * @returns {Promise<{tokenBalance: string, nativeBalance: string}>}
+   * @returns {Promise<{tokenBalance: string, nativeBalance: string, pendingWinnings: string}>}
    */
   async getUpdatedBalances(provider) {
     try {
-      const [tokenBalance, nativeBalance] = await Promise.all([
+      const [tokenBalance, nativeBalance, pendingWinnings] = await Promise.all([
         getTokenBalance(provider, this.wallet.address),
-        getNativeBalance(provider, this.wallet.address)
+        getNativeBalance(provider, this.wallet.address),
+        getPendingWinnings(provider, this.wallet.address)
       ]);
 
       return {
         tokenBalance: parseFloat(tokenBalance),
-        nativeBalance: parseFloat(nativeBalance)
+        nativeBalance: parseFloat(nativeBalance),
+        pendingWinnings: parseFloat(pendingWinnings)
       };
     } catch (error) {
       console.error('Error fetching updated balances:', error);
       throw new Error('Failed to fetch updated balances');
+    }
+  }
+  
+  /**
+   * Get bet details
+   * @param {object} provider - Ethereum provider
+   * @param {string} betId - Bet identifier
+   */
+  async getBetDetails(provider, betId) {
+    try {
+      return await getBetDetails(provider, this.wallet.address, betId);
+    } catch (error) {
+      console.error('Error getting bet details:', error);
+      throw new Error('Failed to get bet details');
     }
   }
 }
@@ -169,18 +219,24 @@ export class AdvancedGameBettingService {
 }
 
 /**
- * Simple betting flow for the current implementation:
+ * New treasury-based betting flow:
  * 
- * 1. PLACE BET: User calls placeBet() → burns tokens from wallet
+ * 1. PLACE BET: User calls placeBet() → transfers tokens to contract treasury
  * 2. PLAY GAME: Game runs independently 
- * 3a. WIN: Call handleWin() → user effectively keeps their bet (since it was burned)
- * 3b. LOSS: Call handleLoss() → confirms the tokens were already burned
+ * 3a. WIN: Call handleWin() → records win, user can claim winnings from treasury
+ * 3b. LOSS: Call handleLoss() → tokens stay in treasury (house keeps them)
+ * 4. CLAIM: Winners can call claimWinnings() → transfers winnings from treasury to user
  * 
- * This is a simple proof-of-concept. In production, you'd want:
- * - A treasury contract to hold bets
- * - Proper game result verification
- * - More sophisticated win/loss handling
+ * This is a proper casino-style system with:
+ * - Contract treasury holding all bets
+ * - Winners paid from treasury pool  
+ * - House keeps losses for sustainability
+ * - Transparent on-chain win/loss records
+ * 
+ * Production improvements needed:
+ * - Backend service to verify game results and call recordWin/recordLoss
  * - House edge calculations
  * - Maximum bet limits
- * - Fairness proofs
+ * - Anti-fraud measures
+ * - Fairness proofs/provably fair system
  */

@@ -395,7 +395,7 @@ const Game = () => {
     } finally {
       setIsRestarting(false);
     }
-  }, [score, currentBid, refetchBalance, wallets, sendTransaction]);
+  }, [score, currentBid, currentBetId, refetchBalance, wallets, sendTransaction]);
 
   return (
     <div className="page-container">
