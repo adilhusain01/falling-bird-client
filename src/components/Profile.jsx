@@ -341,7 +341,7 @@ const Profile = () => {
             <h2 className="ghibli-title text-2xl mb-4 text-center">
               Forbidden Forest
             </h2>
-            <p className="text-slate-600 text-sm text-center" style={{ fontFamily: 'Comfortaa, cursive' }}>
+            <p className="text-secondary text-sm text-center" style={{ fontFamily: 'Inter, sans-serif' }}>
               The magical forest spirits require authentication to reveal the treasures within. 
               Please return to the entrance and present your credentials.
             </p>
@@ -385,56 +385,56 @@ const Profile = () => {
           
           {wallet ? (
             <div className="space-y-4">
-              <div className="p-3 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
-                <p className="text-slate-700 text-sm font-medium mb-1">
+              <div className="p-4 professional-card">
+                <p className="text-primary text-sm font-medium mb-2">
                   🏠 Sanctuary Address:
                 </p>
-                <div className="font-mono text-xs bg-white bg-opacity-80 px-3 py-2 rounded-lg break-all border border-blue-200">
+                <div className="font-mono text-xs text-accent bg-slate-800 px-3 py-2 rounded-lg break-all border border-slate-600">
                   {wallet.address}
                 </div>
               </div>
               
-              <div className="p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100">
-                <p className="text-slate-700 text-sm font-medium">
+              <div className="p-4 professional-card">
+                <p className="text-primary text-sm font-medium">
                   🌍 Realm: {getNetworkDisplayName()}
                 </p>
               </div>
               
-              <div className="p-3 rounded-xl bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-100">
-                <p className="text-slate-700 text-sm font-medium">
+              <div className="p-4 accent-card-blue">
+                <p className="text-primary text-sm font-semibold">
                   ⚡ STT Balance: {isLoadingBalances ? 
                     <span className="inline-flex items-center gap-1">
                       <span className="animate-spin">🌀</span>Loading...
                     </span> : 
                     `${parseFloat(balance).toFixed(4)} STT`}
                 </p>
-                <p className="text-xs text-amber-600 mt-1">
+                <p className="text-xs text-accent mt-1">
                   Used for gas fees on Somnia network
                 </p>
               </div>
               
-              <div className="p-3 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
-                <p className="text-slate-700 text-sm font-medium">
+              <div className="p-4 accent-card-purple">
+                <p className="text-primary text-sm font-semibold">
                   🪙 GBT Tokens: {isLoadingBalances ? 
                     <span className="inline-flex items-center gap-1">
                       <span className="animate-spin">🌀</span>Loading...
                     </span> : 
                     `${parseFloat(tokenBalance).toFixed(2)} GBT`}
                 </p>
-                <div className="mt-1 h-2 w-full bg-purple-100 rounded-full overflow-hidden">
+                <div className="mt-2 h-2 w-full bg-slate-700 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-purple-400 to-pink-500 rounded-full"
+                    className="h-full bg-gradient-to-r from-purple-400 to-pink-500 rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(100, (parseFloat(tokenBalance) / 10000) * 100)}%` }}
                   ></div>
                 </div>
-                <p className="text-xs text-purple-600 mt-1">
+                <p className="text-xs text-secondary mt-1">
                   Game tokens for Catch Goofy
                 </p>
               </div>
               
               {(parseFloat(pendingWinnings) > 0 || isLoadingBalances) && (
-                <div className="p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
-                  <p className="text-slate-700 text-sm font-medium flex items-center gap-2">
+                <div className="p-4 accent-card-green">
+                  <p className="text-primary text-sm font-semibold flex items-center gap-2">
                     🏆 Winnings: {isLoadingBalances ? 
                       <span className="inline-flex items-center gap-1">
                         <span className="animate-spin">🌀</span>Loading...
@@ -442,7 +442,7 @@ const Profile = () => {
                       `${parseFloat(pendingWinnings).toFixed(2)} GBT`}
                    
                   </p>
-                  <p className="text-xs text-green-600 mt-1">
+                  <p className="text-xs text-success mt-1">
                     Winnings from your successful bets
                   </p>
                 </div>
@@ -476,7 +476,7 @@ const Profile = () => {
           ) : (
             <div className="text-center py-4">
               <div className="text-4xl mb-3">🔍</div>
-              <p className="text-slate-600 text-sm" style={{ fontFamily: 'Comfortaa, cursive' }}>
+              <p className="text-secondary text-sm" style={{ fontFamily: 'Inter, sans-serif' }}>
                 No spirit wallet found in this realm. Please summon one through the portal entrance.
               </p>
             </div>
@@ -553,25 +553,25 @@ const Profile = () => {
 
         {/* Error display */}
         {error && (
-          <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-200 max-w-sm w-full">
-            <div className="flex items-center gap-2 text-red-600 text-sm text-center">
+          <div className="mt-4 p-4 professional-card border-red-500/30 bg-red-500/10 max-w-sm w-full">
+            <div className="flex items-center gap-2 text-error text-sm text-center">
               <span>⚠️</span>
-              <span style={{ fontFamily: 'Comfortaa, cursive' }}>{error}</span>
+              <span style={{ fontFamily: 'Inter, sans-serif' }}>{error}</span>
             </div>
           </div>
         )}
 
         {/* Success message for winnings claims */}
         {lastWinningsTx && (
-          <div className="mt-4 p-3 rounded-xl bg-green-50 border border-green-200 max-w-sm w-full">
-            <div className="text-green-600 text-sm text-center">
+          <div className="mt-4 p-4 professional-card border-green-500/30 bg-green-500/10 max-w-sm w-full">
+            <div className="text-success text-sm text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <span>🏆</span>
-                <span style={{ fontFamily: 'Comfortaa, cursive' }}>
+                <span style={{ fontFamily: 'Inter, sans-serif' }}>
                   Successfully claimed your winnings!
                 </span>
               </div>
-              <div className="text-xs text-green-500 break-all">
+              <div className="text-xs text-secondary break-all">
                 Tx: {lastWinningsTx}
               </div>
             </div>
@@ -580,15 +580,15 @@ const Profile = () => {
         
         {/* Success message for token claims */}
         {lastClaimTx && (
-          <div className="mt-4 p-3 rounded-xl bg-green-50 border border-green-200 max-w-sm w-full">
-            <div className="text-green-600 text-sm text-center">
+          <div className="mt-4 p-4 professional-card border-green-500/30 bg-green-500/10 max-w-sm w-full">
+            <div className="text-success text-sm text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <span>🎉</span>
-                <span style={{ fontFamily: 'Comfortaa, cursive' }}>
+                <span style={{ fontFamily: 'Inter, sans-serif' }}>
                   Successfully claimed 1000 GBT!
                 </span>
               </div>
-              <div className="text-xs text-green-500 break-all">
+              <div className="text-xs text-secondary break-all">
                 Tx: {lastClaimTx}
               </div>
             </div>
@@ -596,7 +596,7 @@ const Profile = () => {
         )}
 
         {/* Bottom decorative quote */}
-        <div className="mt-6 text-xs text-emerald-600 opacity-60 text-center max-w-xs" style={{ fontFamily: 'Kalam, cursive' }}>
+        <div className="mt-6 text-xs text-muted opacity-60 text-center max-w-xs" style={{ fontFamily: 'Inter, sans-serif', fontStyle: 'italic' }}>
           "Every catch brings you closer to greatness... ready to Catch Goofy?"
         </div>
       </div>

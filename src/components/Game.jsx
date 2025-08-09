@@ -519,17 +519,17 @@ const Game = () => {
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-xs">
             <div className="ghibli-card px-4 py-2 flex justify-between items-center">
               <div className="text-center px-2">
-                <p className="ghibli-title text-sm text-slate-500">Bid</p>
+                <p className="ghibli-title text-sm text-muted">Bid</p>
                 <p className="text-lg font-bold">{currentBid} SSM</p>
               </div>
               <div className="h-8 w-px bg-slate-200 mx-2"></div>
               <div className="text-center px-2">
-                <p className="ghibli-title text-sm text-slate-500">Multiplier</p>
+                <p className="ghibli-title text-sm text-muted">Multiplier</p>
                 <p className="text-lg font-bold">{score.toFixed(1)}x</p>
               </div>
               <div className="h-8 w-px bg-slate-200 mx-2"></div>
               <div className="text-center px-2">
-                <p className="ghibli-title text-sm text-slate-500">Balance</p>
+                <p className="ghibli-title text-sm text-muted">Balance</p>
                 <p className="text-lg font-bold">
                   {isLoadingBalance ? 
                     <span className="inline-flex items-center gap-1">
@@ -560,7 +560,7 @@ const Game = () => {
           </div>
           <div className="ghibli-card w-full max-w-sm p-8 text-center">
             <h1 className="ghibli-title text-3xl mb-6">Place Your Bid</h1>
-            <p className="text-slate-600 mb-6">
+            <p className="text-secondary mb-6">
               Available Balance: {isLoadingBalance ? 
                 <span className="inline-flex items-center gap-1">
                   <span className="animate-spin text-sm">🌀</span>Loading...
@@ -569,7 +569,7 @@ const Game = () => {
             </p>
             
             <div className="mb-6 px-4">
-              <div className="flex justify-between text-sm text-slate-500 mb-2">
+              <div className="flex justify-between text-sm text-muted mb-2">
                 <span>1 GBT</span>
                 <span>Max: {isLoadingBalance ? '...' : Math.floor(tokenBalance)} GBT</span>
               </div>
@@ -648,7 +648,7 @@ const Game = () => {
           </div>
           <div className="ghibli-card w-full max-w-sm p-8 text-center">
             <h1 className="ghibli-title text-3xl mb-6">Catch Goofy</h1>
-            <p className="text-slate-600 mb-6">
+            <p className="text-secondary mb-6">
               Current Bid: {currentBid} GBT
             </p>
             <div className="space-y-4">
@@ -676,7 +676,7 @@ const Game = () => {
         <div className="flex flex-col items-center justify-center w-full h-full p-6 z-10">
           <div className="ghibli-card w-full max-w-sm p-8 text-center">
             <h2 className="ghibli-title text-2xl mb-2">{gameOverInfo.title}</h2>
-            <p className="text-slate-700 text-xl font-bold mb-6">
+            <p className="text-primary text-xl font-bold mb-6">
               {gameOverInfo.scoreText}
             </p>
             
