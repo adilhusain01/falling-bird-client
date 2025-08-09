@@ -22,6 +22,7 @@ const Profile = () => {
   const [balance, setBalance] = useState('0'); // STT balance
   const [tokenBalance, setTokenBalance] = useState('0'); // GBT token balance
   const [pendingWinnings, setPendingWinnings] = useState('0'); // Pending winnings
+  const [isLoadingBalances, setIsLoadingBalances] = useState(true); // Loading state for balances
   const [canClaim, setCanClaim] = useState(false);
   const [timeUntilClaim, setTimeUntilClaim] = useState(0);
   const [currentChainId, setCurrentChainId] = useState(null);
@@ -44,6 +45,7 @@ const Profile = () => {
     const fetchWalletData = async () => {
       if (wallets.length > 0) {
         const wallet = wallets[0];
+        setIsLoadingBalances(true);
         try {
           let provider;
           if (wallet.connector?.ethersProvider) {
@@ -83,7 +85,11 @@ const Profile = () => {
         } catch (err) {
           setError('Failed to fetch wallet data');
           console.error(err);
+        } finally {
+          setIsLoadingBalances(false);
         }
+      } else {
+        setIsLoadingBalances(false);
       }
     };
     
@@ -97,7 +103,7 @@ const Profile = () => {
 
   // Handle winnings claiming
   const handleClaimWinnings = async () => {
-    if (!wallets.length || isClaimingWinnings || parseFloat(pendingWinnings) <= 0) return;
+    if (!wallets.length || isClaimingWinnings || parseFloat(pendingWinnings) <= 0 || isLoadingBalances) return;
 
     const wallet = wallets[0];
     setIsClaimingWinnings(true);
@@ -396,8 +402,11 @@ const Profile = () => {
               
               <div className="p-3 rounded-xl bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-100">
                 <p className="text-slate-700 text-sm font-medium">
-                  ⚡ STT Balance: {balance !== null ? 
-                    `${parseFloat(balance).toFixed(4)} STT` : 'Counting coins...'}
+                  ⚡ STT Balance: {isLoadingBalances ? 
+                    <span className="inline-flex items-center gap-1">
+                      <span className="animate-spin">🌀</span>Loading...
+                    </span> : 
+                    `${parseFloat(balance).toFixed(4)} STT`}
                 </p>
                 <p className="text-xs text-amber-600 mt-1">
                   Used for gas fees on Somnia network
@@ -406,8 +415,11 @@ const Profile = () => {
               
               <div className="p-3 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
                 <p className="text-slate-700 text-sm font-medium">
-                  🪙 GBT Tokens: {tokenBalance !== null ? 
-                    `${parseFloat(tokenBalance).toFixed(2)} GBT` : 'Loading...'}
+                  🪙 GBT Tokens: {isLoadingBalances ? 
+                    <span className="inline-flex items-center gap-1">
+                      <span className="animate-spin">🌀</span>Loading...
+                    </span> : 
+                    `${parseFloat(tokenBalance).toFixed(2)} GBT`}
                 </p>
                 <div className="mt-1 h-2 w-full bg-purple-100 rounded-full overflow-hidden">
                   <div 
@@ -420,19 +432,46 @@ const Profile = () => {
                 </p>
               </div>
               
-              {parseFloat(pendingWinnings) > 0 && (
+              {(parseFloat(pendingWinnings) > 0 || isLoadingBalances) && (
                 <div className="p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
                   <p className="text-slate-700 text-sm font-medium flex items-center gap-2">
-                    🏆 Pending Winnings: {parseFloat(pendingWinnings).toFixed(2)} GBT
-                    <span className="text-xs bg-green-200 text-green-700 px-2 py-1 rounded-full animate-pulse">
-                      Ready to claim!
-                    </span>
+                    🏆 Winnings: {isLoadingBalances ? 
+                      <span className="inline-flex items-center gap-1">
+                        <span className="animate-spin">🌀</span>Loading...
+                      </span> : 
+                      `${parseFloat(pendingWinnings).toFixed(2)} GBT`}
+                   
                   </p>
                   <p className="text-xs text-green-600 mt-1">
                     Winnings from your successful bets
                   </p>
                 </div>
               )}
+
+{parseFloat(pendingWinnings) > 0 && (
+              <button
+                className={`ghibli-button ghibli-button-green w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
+                  isClaimingWinnings || wallets.length === 0 || currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}` || isLoadingBalances
+                    ? 'opacity-60 cursor-not-allowed' 
+                    : ''
+                }`}
+                onClick={handleClaimWinnings}
+                disabled={isClaimingWinnings || wallets.length === 0 || currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}`}
+              >
+                <span className="text-xl">🏆</span>
+                {isClaimingWinnings ? (
+                  <>
+                    <span className="animate-spin text-lg">🌀</span>
+                    Claiming Winnings...
+                  </>
+                ) : (
+                  <>
+                    Claim {isLoadingBalances ? '...' : parseFloat(pendingWinnings).toFixed(2)} GBT
+                    <span className="text-xl">✨</span>
+                  </>
+                )}
+              </button>
+            )}
             </div>
           ) : (
             <div className="text-center py-4">
@@ -456,30 +495,7 @@ const Profile = () => {
           
           <div className="space-y-3">
             {/* Claim Winnings Button */}
-            {parseFloat(pendingWinnings) > 0 && (
-              <button
-                className={`ghibli-button ghibli-button-green w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
-                  isClaimingWinnings || wallets.length === 0 || currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}`
-                    ? 'opacity-60 cursor-not-allowed' 
-                    : ''
-                }`}
-                onClick={handleClaimWinnings}
-                disabled={isClaimingWinnings || wallets.length === 0 || currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}`}
-              >
-                <span className="text-xl">🏆</span>
-                {isClaimingWinnings ? (
-                  <>
-                    <span className="animate-spin text-lg">🌀</span>
-                    Claiming Winnings...
-                  </>
-                ) : (
-                  <>
-                    Claim {parseFloat(pendingWinnings).toFixed(2)} GBT
-                    <span className="text-xl">✨</span>
-                  </>
-                )}
-              </button>
-            )}
+
             
             {/* Claim Tokens Button */}
             <button

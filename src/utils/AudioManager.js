@@ -24,7 +24,11 @@ export class AudioManager {
                 
                 this.backgroundMusicNodes.forEach(node => {
                     try {
-                        if (node) node.stop();
+                        if (node && typeof node.stop === 'function') {
+                            node.stop();
+                        } else if (node && node.oscillator && typeof node.oscillator.stop === 'function') {
+                            node.oscillator.stop();
+                        }
                     } catch (e) {
                         console.log('Error stopping background music:', e);
                     }
@@ -49,7 +53,30 @@ export class AudioManager {
             
             async initAudio() {
                 try {
+                    // Check if audio is supported
+                    if (!window.AudioContext && !window.webkitAudioContext) {
+                        console.warn('Web Audio API not supported');
+                        this.soundEnabled = false;
+                        return false;
+                    }
+                    
+                    // Close existing context if any
+                    if (this.context && this.context.state !== 'closed') {
+                        try {
+                            await this.context.close();
+                        } catch (e) {
+                            console.warn('Error closing existing audio context:', e);
+                        }
+                    }
+                    
                     this.context = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // Add error event listener
+                    this.context.addEventListener('statechange', () => {
+                        if (this.context) {
+                            console.log('Audio context state changed to:', this.context.state);
+                        }
+                    });
                     
                     this.masterGain = this.context.createGain();
                     this.masterGain.connect(this.context.destination);
@@ -64,41 +91,64 @@ export class AudioManager {
                     this.musicGain.gain.value = 0.6;
                     this.sfxGain.gain.value = 0.8;
                     
+                    // Only resume if suspended due to browser policy
                     if (this.context.state === 'suspended') {
-                        await this.context.resume();
+                        // Don't auto-resume, wait for user interaction
+                        console.log('Audio context suspended, waiting for user interaction');
                     }
                     
                     return true;
                 } catch (e) {
                     console.error('Audio initialization error:', e);
                     this.context = null;
+                    this.soundEnabled = false;
                     return false;
                 }
             }
             
             async resumeContext() {
                 if (this.context && this.context.state === 'suspended') {
-                    await this.context.resume();
+                    try {
+                        await this.context.resume();
+                        console.log('Audio context resumed successfully');
+                    } catch (e) {
+                        console.error('Failed to resume audio context:', e);
+                        this.soundEnabled = false;
+                    }
                 }
             }
             
             createOscillator(frequency, type = 'sine', destination = null) {
-                if (!this.context || !this.soundEnabled) return null;
+                if (!this.context || !this.soundEnabled || this.context.state === 'closed') {
+                    return null;
+                }
                 
-                const oscillator = this.context.createOscillator();
-                const gainNode = this.context.createGain();
-                
-                oscillator.type = type;
-                oscillator.frequency.setValueAtTime(frequency, this.context.currentTime);
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(destination || this.sfxGain);
-                
-                return { oscillator, gainNode };
+                try {
+                    const oscillator = this.context.createOscillator();
+                    const gainNode = this.context.createGain();
+                    
+                    oscillator.type = type;
+                    oscillator.frequency.setValueAtTime(frequency, this.context.currentTime);
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(destination || this.sfxGain);
+                    
+                    return { oscillator, gainNode };
+                } catch (e) {
+                    console.error('Error creating oscillator:', e);
+                    return null;
+                }
             }
             
             startBackgroundMusic() {
-                if (!this.context || !this.soundEnabled || this.backgroundMusicPlaying) return;
+                if (!this.context || !this.soundEnabled || this.backgroundMusicPlaying || this.context.state === 'closed') {
+                    return;
+                }
+                
+                // Try to resume context if suspended
+                if (this.context.state === 'suspended') {
+                    this.resumeContext();
+                }
                 
                 this.backgroundMusicPlaying = true;
                 this.backgroundMusicNodes = [];
@@ -223,11 +273,15 @@ export class AudioManager {
             }
             
             stopBackgroundMusic() {
-                if (!this.backgroundMusicPlaying) return;
+                if (!this.backgroundMusicPlaying || !this.context || this.context.state === 'closed') return;
                 
                 this.backgroundMusicPlaying = false;
                 
-                this.musicGain.gain.linearRampToValueAtTime(0, this.context.currentTime + 1);
+                try {
+                    this.musicGain.gain.linearRampToValueAtTime(0, this.context.currentTime + 1);
+                } catch (e) {
+                    console.log('Error stopping background music gain:', e);
+                }
                 
                 setTimeout(() => {
                     this.backgroundMusicNodes.forEach(node => {
@@ -235,16 +289,26 @@ export class AudioManager {
                             if (node.oscillator) node.oscillator.stop();
                             if (node.vibrato) node.vibrato.stop();
                         } catch (e) {
+                            console.log('Error stopping audio node:', e);
                         }
                     });
                     this.backgroundMusicNodes = [];
                     
-                    this.musicGain.gain.setValueAtTime(0.6, this.context.currentTime);
+                    if (this.context && this.context.state !== 'closed') {
+                        this.musicGain.gain.setValueAtTime(0.6, this.context.currentTime);
+                    }
                 }, 1000);
             }
             
             startFallingSound() {
-                if (!this.context || !this.soundEnabled || this.fallingSoundPlaying) return;
+                if (!this.context || !this.soundEnabled || this.fallingSoundPlaying || this.context.state === 'closed') {
+                    return;
+                }
+                
+                // Try to resume context if suspended
+                if (this.context.state === 'suspended') {
+                    this.resumeContext();
+                }
                 
                 this.fallingSoundPlaying = true;
                 const sound = this.createOscillator(150, 'sine', this.sfxGain);
@@ -271,15 +335,19 @@ export class AudioManager {
             }
             
             stopFallingSound() {
-                if (!this.fallingSoundPlaying || !this.fallingSoundNode) return;
+                if (!this.fallingSoundPlaying || !this.fallingSoundNode || !this.context || this.context.state === 'closed') return;
                 
-                const { oscillator, gainNode } = this.fallingSoundNode;
-                
-                gainNode.gain.linearRampToValueAtTime(0, this.context.currentTime + 0.3);
-                oscillator.stop(this.context.currentTime + 0.4);
-                
-                if (this.fallingSoundLfo) {
-                    this.fallingSoundLfo.stop(this.context.currentTime + 0.4);
+                try {
+                    const { oscillator, gainNode } = this.fallingSoundNode;
+                    
+                    gainNode.gain.linearRampToValueAtTime(0, this.context.currentTime + 0.3);
+                    oscillator.stop(this.context.currentTime + 0.4);
+                    
+                    if (this.fallingSoundLfo) {
+                        this.fallingSoundLfo.stop(this.context.currentTime + 0.4);
+                    }
+                } catch (e) {
+                    console.log('Error stopping falling sound:', e);
                 }
                 
                 this.fallingSoundPlaying = false;
@@ -287,7 +355,11 @@ export class AudioManager {
             }
             
             playCrashSound() {
-                if (!this.context || !this.soundEnabled) return;
+                if (!this.context || !this.soundEnabled || this.context.state === 'closed') {
+                    return;
+                }
+                
+                try {
                 
                 const noise = this.context.createBufferSource();
                 const buffer = this.context.createBuffer(1, this.context.sampleRate * 0.5, this.context.sampleRate);
@@ -314,10 +386,17 @@ export class AudioManager {
                 
                 noise.start();
                 noise.stop(this.context.currentTime + 0.5);
+                } catch (e) {
+                    console.error('Error playing crash sound:', e);
+                }
             }
             
             playCashOutSound() {
-                if (!this.context || !this.soundEnabled) return;
+                if (!this.context || !this.soundEnabled || this.context.state === 'closed') {
+                    return;
+                }
+                
+                try {
                 
                 const frequencies = [262, 330, 392, 523]; 
                 
@@ -335,6 +414,9 @@ export class AudioManager {
                     oscillator.start(startTime);
                     oscillator.stop(startTime + 0.3);
                 });
+                } catch (e) {
+                    console.error('Error playing cash out sound:', e);
+                }
             }
             
             toggle() {
@@ -343,6 +425,7 @@ export class AudioManager {
                     this.stopFallingSound();
                     this.stopBackgroundMusic();
                 } else if (this.backgroundMusicPlaying === false) {
+                    // Audio is disabled, do nothing
                 }
                 return this.soundEnabled;
             }

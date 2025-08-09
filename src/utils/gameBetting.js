@@ -2,6 +2,8 @@ import { ethers } from 'ethers';
 import { 
   getPlaceBetTransactionData,
   getClaimWinningsTransactionData,
+  getRecordWinTransactionData,
+  getRecordLossTransactionData,
   generateBetId,
   getTokenBalance, 
   getNativeBalance,
@@ -25,16 +27,19 @@ export class GameBettingService {
   /**
    * Place a bet (transfer tokens to contract treasury)
    * @param {number} amount - Amount to bet in GBT tokens
+   * @param {number} maxMultiplier - Maximum expected multiplier (default 10x)
    * @returns {Promise<{betId: string, txHash: string}>}
    */
-  async placeBet(amount) {
+  async placeBet(amount, maxMultiplier = 10.0) {
     try {
       // Generate unique bet ID
       const betId = generateBetId();
       this.currentBetId = betId;
       
-      // Create transaction to transfer tokens to contract
-      const txData = getPlaceBetTransactionData(betId, amount);
+      console.log(`Placing bet: ${amount} GBT with max multiplier: ${maxMultiplier}x`);
+      
+      // Create transaction to transfer tokens to contract with max multiplier
+      const txData = getPlaceBetTransactionData(betId, amount, maxMultiplier);
       
       // Send transaction using Privy
       const result = await this.sendTransaction(txData, {
@@ -63,18 +68,36 @@ export class GameBettingService {
       // Calculate winnings
       const winnings = betAmount * multiplier;
       
-      // Note: In a real system, you'd have a backend service that calls
-      // recordWin() on the smart contract after verifying the game result.
-      // For this demo, we'll simulate this by noting the win locally.
+      console.log(`Recording win on blockchain: Bet: ${betAmount} GBT, Multiplier: ${multiplier}x, Winnings: ${winnings} GBT`);
       
-      console.log(`Win recorded! Bet: ${betAmount} GBT, Multiplier: ${multiplier}x, Winnings: ${winnings} GBT`);
-      
-      return {
-        betId,
-        winnings: winnings,
-        canClaim: true, // In real system, check if backend has called recordWin
-        message: `Congratulations! You won ${winnings.toFixed(2)} GBT (${multiplier}x multiplier)`
-      };
+      try {
+        // Record the win on the blockchain (self-recording)
+        const txData = getRecordWinTransactionData(betId, multiplier);
+        console.log('Sending recordWin transaction with data:', txData);
+        
+        const result = await this.sendTransaction(txData, {
+          address: this.wallet.address
+        });
+        
+        console.log('Win recorded on blockchain! Transaction hash:', result.transactionHash);
+        
+        return {
+          betId,
+          winnings: winnings,
+          canClaim: true,
+          txHash: result.transactionHash,
+          message: `Congratulations! You won ${winnings.toFixed(2)} GBT (${multiplier}x multiplier)`
+        };
+      } catch (blockchainError) {
+        console.error('Failed to record win on blockchain:', blockchainError);
+        // If blockchain recording fails, still return the win info for display
+        return {
+          betId,
+          winnings: winnings,
+          canClaim: false, // Can't claim if not recorded on chain
+          message: `Win calculated: ${winnings.toFixed(2)} GBT (${multiplier}x), but failed to record on blockchain`
+        };
+      }
     } catch (error) {
       console.error('Error handling win:', error);
       throw new Error('Failed to process win');
@@ -90,18 +113,34 @@ export class GameBettingService {
    */
   async handleLoss(betId, betAmount, betTxHash) {
     try {
-      // Note: In a real system, you'd have a backend service that calls
-      // recordLoss() on the smart contract after verifying the game result.
-      // The tokens are already in the contract treasury from placeBet()
+      console.log(`Recording loss on blockchain: Bet ID: ${betId}, Amount: ${betAmount} GBT`);
       
-      console.log(`Loss recorded! Bet ID: ${betId}, Amount: ${betAmount} GBT - tokens remain in treasury`);
-      
-      return {
-        betId,
-        lossAmount: betAmount,
-        txHash: betTxHash, // Reference to the bet transaction
-        message: `Sorry! You lost ${betAmount} GBT tokens`
-      };
+      try {
+        // Record the loss on the blockchain (self-recording)
+        const txData = getRecordLossTransactionData(betId);
+        
+        const result = await this.sendTransaction(txData, {
+          address: this.wallet.address
+        });
+        
+        console.log('Loss recorded on blockchain! Transaction hash:', result.transactionHash);
+        
+        return {
+          betId,
+          lossAmount: betAmount,
+          txHash: result.transactionHash,
+          message: `Loss recorded: ${betAmount} GBT tokens remain in treasury`
+        };
+      } catch (blockchainError) {
+        console.error('Failed to record loss on blockchain:', blockchainError);
+        // Return original bet transaction as fallback
+        return {
+          betId,
+          lossAmount: betAmount,
+          txHash: betTxHash,
+          message: `Sorry! You lost ${betAmount} GBT tokens`
+        };
+      }
     } catch (error) {
       console.error('Error handling loss:', error);
       throw new Error('Failed to process loss');

@@ -14,8 +14,10 @@ const Game = () => {
   const [bidAmount, setBidAmount] = useState(1);
   const [currentBid, setCurrentBid] = useState(0);
   const [betTxHash, setBetTxHash] = useState(null);
+  const [currentBetId, setCurrentBetId] = useState(null);
   const [isPlacingBet, setIsPlacingBet] = useState(false);
-  const { tokenBalance, refetch: refetchBalance } = useTokenBalance();
+  const [gameEnded, setGameEnded] = useState(false);
+  const { tokenBalance, refetch: refetchBalance, isLoading: isLoadingBalance } = useTokenBalance();
   const { wallets } = useWallets();
   const { sendTransaction } = useSendTransaction();
   const navigate = useNavigate();
@@ -42,8 +44,28 @@ const Game = () => {
   };
 
   const crash = useCallback(async () => {
+    // Prevent multiple executions
+    if (gameEnded) {
+      console.log('Game already ended, ignoring crash call');
+      return;
+    }
+    
+    setGameEnded(true);
+    setGameState('gameOver'); // Immediately stop the game loop
+    gameStateRef.current = 'gameOver'; // Update ref immediately to stop animation
+    
+    // Cancel any pending animation frames
+    if (animationFrameId.current) {
+      cancelAnimationFrame(animationFrameId.current);
+      animationFrameId.current = null;
+    }
+    
+    // Immediately stop sounds
     const audio = audioManagerRef.current;
-    if (!audio) return;
+    if (audio) {
+      audio.stopFallingSound();
+      audio.stopBackgroundMusic();
+    }
 
     if (gameLogicRef.current) {
       gameLogicRef.current.bird.crying = true;
@@ -59,25 +81,44 @@ const Game = () => {
       }
     }
 
+    // Show initial crash message
+    setGameOverInfo({ title: '💥 Crashed!', scoreText: `Lost: ${currentBid} GBT` });
+    
+    // Wait a moment for user to see the crash before showing transaction popup
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Show processing message
+    setGameOverInfo({ title: '💥 Crashed!', scoreText: `Processing loss... 🌀` });
+    
     // Handle loss using betting service
-    if (wallets.length > 0 && betTxHash) {
+    if (wallets.length > 0 && currentBetId) {
       try {
+        console.log('Processing loss for bet:', currentBetId);
         const bettingService = new GameBettingService(sendTransaction, wallets[0]);
-        const lossResult = await bettingService.handleLoss(currentBid, betTxHash);
+        const lossResult = await bettingService.handleLoss(currentBetId, currentBid, betTxHash);
         console.log('Loss processed:', lossResult);
+        
+        // Update with final loss info
+        setGameOverInfo({ title: '💥 Crashed!', scoreText: `Lost: ${currentBid} GBT` });
       } catch (error) {
         console.error('Error processing loss:', error);
+        // Show error state
+        setGameOverInfo({ title: '💥 Crashed!', scoreText: `Lost: ${currentBid} GBT` });
       }
+    } else {
+      // No wallet connected, just show the loss
+      setGameOverInfo({ title: '💥 Crashed!', scoreText: `Lost: ${currentBid} GBT` });
     }
 
-    setGameState('gameOver');
-    setGameOverInfo({ title: '💥 Crashed!', scoreText: `Lost: ${currentBid} GBT` });
+    // Final game over info will be set by the crash process above
     setCurrentBid(0);
     setBetTxHash(null);
+    setCurrentBetId(null);
 
-    audio.stopFallingSound();
-    audio.stopBackgroundMusic();
-    audio.playCrashSound();
+    // Sounds already stopped above, just play crash sound
+    if (audio) {
+      audio.playCrashSound();
+    }
 
     // Refresh balance to show updated amount
     refetchBalance();
@@ -90,7 +131,7 @@ const Game = () => {
     } finally {
       setIsRestarting(false);
     }
-  }, [currentBid, refetchBalance, wallets, betTxHash, sendTransaction]);
+  }, [gameEnded, currentBid, currentBetId, refetchBalance, wallets, betTxHash, sendTransaction]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -206,10 +247,15 @@ const Game = () => {
     };
 
     const update = (deltaTime) => {
+      // Stop updating if game has ended
+      if (gameStateRef.current !== 'playing') {
+        return;
+      }
+      
       logic.gameTime += deltaTime;
       setScore(logic.gameTime / 1000);
 
-      if (logic.gameTime >= logic.crashTimer) {
+      if (logic.gameTime >= logic.crashTimer && !gameEnded) {
         crash();
         return;
       }
@@ -256,9 +302,16 @@ const Game = () => {
 
       if (gameStateRef.current === 'playing') {
         update(deltaTime);
+        render();
+      } else if (gameStateRef.current === 'gameOver') {
+        // Only render final frame for game over state, no more updates
+        render();
       }
-      render();
-      animationFrameId.current = requestAnimationFrame(animate);
+      
+      // Continue animation loop for other states (bidding, start)
+      if (gameStateRef.current !== 'gameOver') {
+        animationFrameId.current = requestAnimationFrame(animate);
+      }
     };
 
     animate(0);
@@ -266,10 +319,10 @@ const Game = () => {
     return () => {
       cancelAnimationFrame(animationFrameId.current);
     };
-  }, [crash]);
+  }, [crash, gameEnded]);
 
   const handleBidSubmit = async () => {
-    if (bidAmount < 1 || bidAmount > tokenBalance || isPlacingBet) return;
+    if (bidAmount < 1 || bidAmount > tokenBalance || isPlacingBet || isLoadingBalance) return;
     
     if (!wallets.length) {
       console.error('No wallet connected');
@@ -282,13 +335,17 @@ const Game = () => {
       // Create betting service instance
       const bettingService = new GameBettingService(sendTransaction, wallets[0]);
       
-      // Place bet on blockchain (burns tokens)
-      const txHash = await bettingService.placeBet(bidAmount);
-      setBetTxHash(txHash);
+      // Place bet on blockchain (transfers tokens to treasury)
+      // Set maxMultiplier based on bid amount (higher bets = higher max multiplier allowed)
+      const maxMultiplier = Math.min(10.0, 2.0 + (bidAmount * 0.5)); // 2x base + 0.5x per token
+      const betResult = await bettingService.placeBet(bidAmount, maxMultiplier);
+      setBetTxHash(betResult.txHash);
+      setCurrentBetId(betResult.betId);
       
       // Set current bid and move to start screen
       setCurrentBid(bidAmount);
       setGameState('start');
+      setGameEnded(false); // Reset for new game round
       
       // Refresh balance after bet placement
       refetchBalance();
@@ -319,6 +376,7 @@ const Game = () => {
 
     setScore(0);
     setGameState('playing');
+    setGameEnded(false); // Reset game ended flag for new game
 
     try {
       await audio.cleanup();
@@ -345,32 +403,71 @@ const Game = () => {
   }, [isRestarting]);
 
   const cashOut = useCallback(async () => {
+    // Prevent multiple executions
+    if (gameEnded) {
+      console.log('Game already ended, ignoring cash out call');
+      return;
+    }
+    
+    setGameEnded(true);
+    setGameState('gameOver'); // Immediately stop the game loop
+    gameStateRef.current = 'gameOver'; // Update ref immediately to stop animation
+    
+    // Cancel any pending animation frames
+    if (animationFrameId.current) {
+      cancelAnimationFrame(animationFrameId.current);
+      animationFrameId.current = null;
+    }
+    
+    // Immediately stop sounds
     const audio = audioManagerRef.current;
-    const winMultiplier = score;
+    if (audio) {
+      audio.stopFallingSound();
+      audio.stopBackgroundMusic();
+    }
+    
+    const winMultiplier = Math.round((score || 1.0) * 100) / 100; // Round to 2 decimal places to avoid floating point issues
+    
+    console.log('Debug: score =', score, 'winMultiplier =', winMultiplier);
+    
+    // Show initial cash out message
+    setGameOverInfo({ 
+      title: '🎉 Cashed Out!', 
+      scoreText: `Multiplier: ${winMultiplier.toFixed(1)}x` 
+    });
+    
+    // Wait a moment for user to see the cash out before showing transaction popup
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Show processing message
+    setGameOverInfo({ 
+      title: '🎉 Cashed Out!', 
+      scoreText: `Processing win... 🌀` 
+    });
     
     // Handle win using betting service
-    if (wallets.length > 0) {
+    if (wallets.length > 0 && currentBetId) {
       try {
+        console.log('Processing win for bet:', currentBetId);
         const bettingService = new GameBettingService(sendTransaction, wallets[0]);
-        const winResult = await bettingService.handleWin(currentBid, winMultiplier);
+        const winResult = await bettingService.handleWin(currentBetId, currentBid, winMultiplier);
         console.log('Win processed:', winResult);
         
-        setGameState('gameOver');
+        // Update with final win info
         setGameOverInfo({ 
           title: '🎉 Cashed Out!', 
           scoreText: `Won: ${winResult.winnings} GBT (${winMultiplier.toFixed(1)}x)` 
         });
       } catch (error) {
         console.error('Error processing win:', error);
-        // Fallback to simple display
-        setGameState('gameOver');
+        // Fallback to simple display - game state already set above
         setGameOverInfo({ 
           title: '🎉 Cashed Out!', 
           scoreText: `Multiplier: ${winMultiplier.toFixed(1)}x` 
         });
       }
     } else {
-      setGameState('gameOver');
+      // Game state already set above, just update display info
       setGameOverInfo({ 
         title: '🎉 Cashed Out!', 
         scoreText: `Multiplier: ${winMultiplier.toFixed(1)}x` 
@@ -379,10 +476,12 @@ const Game = () => {
     
     setCurrentBid(0);
     setBetTxHash(null);
+    setCurrentBetId(null);
 
-    audio.stopFallingSound();
-    audio.stopBackgroundMusic();
-    audio.playCashOutSound();
+    // Sounds already stopped above, just play cash out sound
+    if (audio) {
+      audio.playCashOutSound();
+    }
 
     // Refresh balance (though for wins, balance doesn't change in current implementation)
     refetchBalance();
@@ -395,7 +494,7 @@ const Game = () => {
     } finally {
       setIsRestarting(false);
     }
-  }, [score, currentBid, currentBetId, refetchBalance, wallets, sendTransaction]);
+  }, [gameEnded, score, currentBid, currentBetId, refetchBalance, wallets, sendTransaction]);
 
   return (
     <div className="page-container">
@@ -431,7 +530,13 @@ const Game = () => {
               <div className="h-8 w-px bg-slate-200 mx-2"></div>
               <div className="text-center px-2">
                 <p className="ghibli-title text-sm text-slate-500">Balance</p>
-                <p className="text-lg font-bold">{tokenBalance.toFixed(2)} GBT</p>
+                <p className="text-lg font-bold">
+                  {isLoadingBalance ? 
+                    <span className="inline-flex items-center gap-1">
+                      <span className="animate-spin text-sm">🌀</span>...
+                    </span> : 
+                    `${tokenBalance.toFixed(2)} GBT`}
+                </p>
               </div>
             </div>
           </div>
@@ -456,18 +561,22 @@ const Game = () => {
           <div className="ghibli-card w-full max-w-sm p-8 text-center">
             <h1 className="ghibli-title text-3xl mb-6">Place Your Bid</h1>
             <p className="text-slate-600 mb-6">
-              Available Balance: {tokenBalance.toFixed(2)} GBT
+              Available Balance: {isLoadingBalance ? 
+                <span className="inline-flex items-center gap-1">
+                  <span className="animate-spin text-sm">🌀</span>Loading...
+                </span> : 
+                `${tokenBalance.toFixed(2)} GBT`}
             </p>
             
             <div className="mb-6 px-4">
               <div className="flex justify-between text-sm text-slate-500 mb-2">
                 <span>1 GBT</span>
-                <span>Max: {Math.floor(tokenBalance)} GBT</span>
+                <span>Max: {isLoadingBalance ? '...' : Math.floor(tokenBalance)} GBT</span>
               </div>
               <Slider
                 value={bidAmount}
                 min={1}
-                max={Math.max(1, Math.floor(tokenBalance))}
+                max={isLoadingBalance ? 1 : Math.max(1, Math.floor(tokenBalance))}
                 step={1}
                 onChange={(e, value) => setBidAmount(value)}
                 valueLabelDisplay="auto"
@@ -500,12 +609,17 @@ const Game = () => {
             <div className="space-y-4">
               <button 
                 className={`ghibli-button ghibli-button-green px-6 py-3 w-full text-lg ${
-                  tokenBalance < 1 || isPlacingBet ? 'opacity-50 cursor-not-allowed' : ''
+                  tokenBalance < 1 || isPlacingBet || isLoadingBalance ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
                 onClick={handleBidSubmit}
-                disabled={tokenBalance < 1 || isPlacingBet}
+                disabled={tokenBalance < 1 || isPlacingBet || isLoadingBalance}
               >
-                {isPlacingBet ? (
+                {isLoadingBalance ? (
+                  <span className="flex items-center justify-center">
+                    <span className="animate-spin mr-2">🌀</span>
+                    Loading Balance...
+                  </span>
+                ) : isPlacingBet ? (
                   <span className="flex items-center justify-center">
                     <span className="animate-spin mr-2">🌀</span>
                     Placing Bet...
