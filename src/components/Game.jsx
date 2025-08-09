@@ -533,7 +533,7 @@ const Game = () => {
             🐦
           </div>
           <div className="ghibli-card w-full max-w-sm p-8 text-center">
-            <h1 className="ghibli-title text-3xl mb-6">Shishimaroo</h1>
+            <h1 className="ghibli-title text-3xl mb-6">Catch Goofy</h1>
             <p className="text-slate-600 mb-6">
               Current Bid: {currentBid} GBT
             </p>

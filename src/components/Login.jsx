@@ -33,9 +33,9 @@ const Login = () => {
         </div>
         
         <div className="ghibli-card w-full max-w-sm p-8 text-center">
-          <h1 className="ghibli-title text-3xl mb-2">Shishimaroo</h1>
+          <h1 className="ghibli-title text-3xl mb-2">Catch Goofy</h1>
           <p className="text-slate-600 text-sm mb-6" style={{ fontFamily: 'Kalam, cursive' }}>
-            ~ A Magical Adventure Awaits ~
+            ~ Catch the Falling Goofy Bird! ~
           </p>
           
           <button
@@ -68,7 +68,7 @@ const Login = () => {
         </div>
         
         <p className="mt-6 text-xs text-slate-500 opacity-70" style={{ fontFamily: 'Kalam, cursive' }}>
-          "In every cloud, there's a story waiting to unfold..."
+          "Get ready to catch Goofy and win amazing rewards!"
         </p>
       </div>
     </div>

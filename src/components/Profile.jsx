@@ -286,9 +286,9 @@ const Profile = () => {
         {/* Header */}
         <div className="text-center mb-6">
           <div className="text-5xl mb-2" style={{ animation: 'gentle-float 4s ease-in-out infinite' }}>🐦</div>
-          <h1 className="ghibli-title text-3xl">Adventurer's Codex</h1>
+          <h1 className="ghibli-title text-3xl">Catch Goofy Profile</h1>
           <div className="text-sm text-emerald-700 opacity-70 mt-1" style={{ fontFamily: 'Kalam, cursive' }}>
-            ~ Your Magical Compendium ~
+            ~ Your Game Stats & Wallet ~
           </div>
         </div>
         
@@ -341,7 +341,7 @@ const Profile = () => {
                   ></div>
                 </div>
                 <p className="text-xs text-purple-600 mt-1">
-                  Game currency for placing bets
+                  Game tokens for Catch Goofy
                 </p>
               </div>
             </div>
@@ -416,7 +416,7 @@ const Profile = () => {
             onClick={() => navigate('/')}
           >
             <span className="text-lg">🎮</span>
-            Play Game
+            Catch Goofy
           </button>
         </div>
 
@@ -449,7 +449,7 @@ const Profile = () => {
 
         {/* Bottom decorative quote */}
         <div className="mt-6 text-xs text-emerald-600 opacity-60 text-center max-w-xs" style={{ fontFamily: 'Kalam, cursive' }}>
-          "The winds carry more than just leaves... they carry dreams and possibilities."
+          "Every catch brings you closer to greatness... ready to Catch Goofy?"
         </div>
       </div>
     </div>
