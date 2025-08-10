@@ -34,9 +34,9 @@ const Game = () => {
 
   const getCrashTime = () => {
     const rand = Math.random();
-    if (rand < 0.2) {
+    if (rand < 0.1) {
       return Math.random() * 1000;
-    } else if (rand < 0.6) {
+    } else if (rand < 0.5) {
       return 1000 + Math.random() * 4000;
     } else {
       return 5000 + Math.random() * 5000;
