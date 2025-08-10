@@ -36,7 +36,7 @@ const Profile = () => {
     chainId: 50312,
     name: 'Somnia Testnet',
     rpcUrl: 'https://dream-rpc.somnia.network/',
-    nativeCurrency: { name: 'STT', symbol: 'STT', decimals: 18 },
+    nativeCurrency: { name: 'SST', symbol: 'SST', decimals: 18 },
     blockExplorerUrl: 'https://shannon-explorer.somnia.network/'
   };
 
@@ -153,7 +153,7 @@ const Profile = () => {
       if (err.message.includes('No winnings to claim')) {
         setError('No winnings available to claim');
       } else if (err.message.includes('insufficient funds')) {
-        setError('Insufficient STT balance for gas fees');
+        setError('Insufficient SST balance for gas fees');
       } else if (err.message.includes('User rejected')) {
         setError('Transaction was cancelled');
       } else {
@@ -221,7 +221,7 @@ const Profile = () => {
       if (err.message.includes('Faucet cooldown not met')) {
         setError('You need to wait before claiming again');
       } else if (err.message.includes('insufficient funds')) {
-        setError('Insufficient STT balance for gas fees');
+        setError('Insufficient SST balance for gas fees');
       } else if (err.message.includes('User rejected')) {
         setError('Transaction was cancelled');
       } else {
@@ -402,11 +402,11 @@ const Profile = () => {
               
               <div className="p-4 accent-card-blue">
                 <p className="text-primary text-sm font-semibold">
-                  ⚡ STT Balance: {isLoadingBalances ? 
+                  ⚡ SST Balance: {isLoadingBalances ? 
                     <span className="inline-flex items-center gap-1">
                       <span className="animate-spin">🌀</span>Loading...
                     </span> : 
-                    `${parseFloat(balance).toFixed(4)} STT`}
+                    `${parseFloat(balance).toFixed(4)} SST`}
                 </p>
                 <p className="text-xs text-accent mt-1">
                   Used for gas fees on Somnia network
