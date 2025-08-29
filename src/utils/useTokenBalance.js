@@ -5,7 +5,7 @@ import { getTokenBalance, getNativeBalance } from './contractUtils';
 
 const XPHERE_TESTNET = {
   chainId: 1998991,
-  rpcUrl: 'https://rpc.ankr.com/xphere_testnet',
+  rpcUrl: 'http://testnet.x-phere.com',
 };
 
 export const useTokenBalance = () => {

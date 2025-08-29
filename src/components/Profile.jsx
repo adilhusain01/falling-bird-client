@@ -35,7 +35,7 @@ const Profile = () => {
   const XPHERE_TESTNET = {
     chainId: 1998991,
     name: 'Xphere Testnet',
-    rpcUrl: 'https://rpc.ankr.com/xphere_testnet',
+    rpcUrl: 'http://testnet.x-phere.com',
     nativeCurrency: { name: 'XPT', symbol: 'XPT', decimals: 18 },
     blockExplorerUrl: 'https://xpt.tamsa.io/'
   };

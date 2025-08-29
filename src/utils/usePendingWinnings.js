@@ -12,7 +12,7 @@ export const usePendingWinnings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const XPHERE_TESTNET_RPC = 'https://rpc.ankr.com/xphere_testnet/';
+  const XPHERE_TESTNET_RPC = 'http://testnet.x-phere.com';
 
   const fetchPendingWinnings = async () => {
     if (wallets.length === 0) {
