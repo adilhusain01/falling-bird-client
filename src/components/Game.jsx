@@ -46,7 +46,6 @@ const Game = () => {
   const crash = useCallback(async () => {
     // Prevent multiple executions
     if (gameEnded) {
-      console.log('Game already ended, ignoring crash call');
       return;
     }
     
@@ -93,15 +92,12 @@ const Game = () => {
     // Handle loss using betting service
     if (wallets.length > 0 && currentBetId) {
       try {
-        console.log('Processing loss for bet:', currentBetId);
         const bettingService = new GameBettingService(sendTransaction, wallets[0]);
         const lossResult = await bettingService.handleLoss(currentBetId, currentBid, betTxHash);
-        console.log('Loss processed:', lossResult);
         
         // Update with final loss info
         setGameOverInfo({ title: '💥 Crashed!', scoreText: `Lost: ${currentBid} GBT` });
       } catch (error) {
-        console.error('Error processing loss:', error);
         // Show error state
         setGameOverInfo({ title: '💥 Crashed!', scoreText: `Lost: ${currentBid} GBT` });
       }
@@ -127,7 +123,6 @@ const Game = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
       await audio.cleanup();
     } catch (e) {
-      console.error('Error during audio cleanup:', e);
     } finally {
       setIsRestarting(false);
     }
@@ -325,7 +320,6 @@ const Game = () => {
     if (bidAmount < 1 || bidAmount > tokenBalance || isPlacingBet || isLoadingBalance) return;
     
     if (!wallets.length) {
-      console.error('No wallet connected');
       return;
     }
 
@@ -351,7 +345,6 @@ const Game = () => {
       refetchBalance();
       
     } catch (error) {
-      console.error('Error placing bet:', error);
       // Handle error - maybe show an error message to user
     } finally {
       setIsPlacingBet(false);
@@ -392,11 +385,9 @@ const Game = () => {
           newAudio.startBackgroundMusic();
           newAudio.startFallingSound();
         } catch (e) {
-          console.error('Error starting audio:', e);
         }
       }, 50);
     } catch (error) {
-      console.error('Error initializing audio:', error);
     } finally {
       setIsRestarting(false);
     }
@@ -405,7 +396,6 @@ const Game = () => {
   const cashOut = useCallback(async () => {
     // Prevent multiple executions
     if (gameEnded) {
-      console.log('Game already ended, ignoring cash out call');
       return;
     }
     
@@ -428,7 +418,6 @@ const Game = () => {
     
     const winMultiplier = Math.round((score || 1.0) * 100) / 100; // Round to 2 decimal places to avoid floating point issues
     
-    console.log('Debug: score =', score, 'winMultiplier =', winMultiplier);
     
     // Show initial cash out message
     setGameOverInfo({ 
@@ -448,10 +437,8 @@ const Game = () => {
     // Handle win using betting service
     if (wallets.length > 0 && currentBetId) {
       try {
-        console.log('Processing win for bet:', currentBetId);
         const bettingService = new GameBettingService(sendTransaction, wallets[0]);
         const winResult = await bettingService.handleWin(currentBetId, currentBid, winMultiplier);
-        console.log('Win processed:', winResult);
         
         // Update with final win info
         setGameOverInfo({ 
@@ -459,7 +446,6 @@ const Game = () => {
           scoreText: `Won: ${winResult.winnings} GBT (${winMultiplier.toFixed(1)}x)` 
         });
       } catch (error) {
-        console.error('Error processing win:', error);
         // Fallback to simple display - game state already set above
         setGameOverInfo({ 
           title: '🎉 Cashed Out!', 
@@ -490,7 +476,6 @@ const Game = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
       await audio.cleanup();
     } catch (e) {
-      console.error('Error during audio cleanup:', e);
     } finally {
       setIsRestarting(false);
     }

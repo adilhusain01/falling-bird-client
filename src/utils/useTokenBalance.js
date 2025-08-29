@@ -2,11 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useWallets } from '@privy-io/react-auth';
 import { ethers } from 'ethers';
 import { getTokenBalance, getNativeBalance } from './contractUtils';
-
-const XPHERE_TESTNET = {
-  chainId: 1998991,
-  rpcUrl: 'https://rpc.ankr.com/xphere_testnet',
-};
+import { XPHERE_TESTNET } from '../config/constants';
 
 export const useTokenBalance = () => {
   const { wallets } = useWallets();
@@ -39,7 +35,6 @@ export const useTokenBalance = () => {
       setTokenBalance(gbtBalance);
       setNativeBalance(xptBalance);
     } catch (err) {
-      console.error('Error fetching balances:', err);
       setError('Failed to fetch balances');
     } finally {
       setIsLoading(false);

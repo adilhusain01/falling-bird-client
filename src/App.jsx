@@ -2,8 +2,7 @@ import React from 'react';
 import { PrivyProvider, usePrivy } from '@privy-io/react-auth';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-// Replace this with any of the networks listed at https://github.com/wevm/viem/blob/main/src/chains/index.ts
-import { xphereTestnet} from 'viem/chains';
+import { customXphereTestnet } from './config/constants';
 import Game from './components/Game';
 import Login from './components/Login';
 import Profile from './components/Profile';
@@ -41,13 +40,15 @@ function App() {
 }
 
 function AppWrapper() {
+  
+
   return (
     <QueryClientProvider client={queryClient}>
       <PrivyProvider
         appId="cmdx3unrh01cuk10bwfqveom6"
         config={{
-          defaultChain: xphereTestnet,
-          supportedChains: [ xphereTestnet],
+          defaultChain: customXphereTestnet,
+          supportedChains: [customXphereTestnet],
           appearance: {
             accentColor: '#7dd3fc',
             theme: 'dark',

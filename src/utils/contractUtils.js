@@ -1173,7 +1173,6 @@ export const getTokenBalance = async (provider, address) => {
     const balance = await contract.balanceOf(address);
     return ethers.formatEther(balance);
   } catch (error) {
-    console.error('Error fetching token balance:', error);
     throw error;
   }
 };
@@ -1186,7 +1185,6 @@ export const canClaimFaucet = async (provider, address) => {
     const contract = getContract(provider);
     return await contract.canClaimFaucet(address);
   } catch (error) {
-    console.error('Error checking faucet eligibility:', error);
     throw error;
   }
 };
@@ -1200,7 +1198,6 @@ export const getTimeUntilNextClaim = async (provider, address) => {
     const timeInSeconds = await contract.timeUntilNextClaim(address);
     return Number(timeInSeconds);
   } catch (error) {
-    console.error('Error getting time until next claim:', error);
     throw error;
   }
 };
@@ -1214,7 +1211,6 @@ export const claimFaucetTokens = async (signer) => {
     const tx = await contract.claimFaucet();
     return tx;
   } catch (error) {
-    console.error('Error claiming faucet tokens:', error);
     throw error;
   }
 };
@@ -1289,7 +1285,6 @@ export const placeBet = async (signer, betId, amount) => {
     const tx = await contract.placeBet(betId, amountWei);
     return tx;
   } catch (error) {
-    console.error('Error placing bet:', error);
     throw error;
   }
 };
@@ -1304,7 +1299,6 @@ export const claimWinnings = async (signer) => {
     const tx = await contract.claimWinnings();
     return tx;
   } catch (error) {
-    console.error('Error claiming winnings:', error);
     throw error;
   }
 };
@@ -1329,7 +1323,6 @@ export const getBetDetails = async (provider, playerAddress, betId) => {
       exists
     };
   } catch (error) {
-    console.error('Error getting bet details:', error);
     throw error;
   }
 };
@@ -1345,7 +1338,6 @@ export const getPendingWinnings = async (provider, playerAddress) => {
     const winnings = await contract.getPendingWinnings(playerAddress);
     return ethers.formatEther(winnings);
   } catch (error) {
-    console.error('Error getting pending winnings:', error);
     throw error;
   }
 };
@@ -1364,7 +1356,6 @@ export const getTreasuryStats = async (provider) => {
       totalWinnings: ethers.formatEther(totalWinnings)
     };
   } catch (error) {
-    console.error('Error getting treasury stats:', error);
     throw error;
   }
 };
@@ -1394,7 +1385,6 @@ export const recordWinOnChain = async (signer, betId, multiplier) => {
     const tx = await contract.recordWin(betId, multiplierBasisPoints);
     return tx;
   } catch (error) {
-    console.error('Error recording win on chain:', error);
     throw error;
   }
 };
@@ -1410,7 +1400,6 @@ export const recordLossOnChain = async (signer, betId) => {
     const tx = await contract.recordLoss(betId);
     return tx;
   } catch (error) {
-    console.error('Error recording loss on chain:', error);
     throw error;
   }
 };
@@ -1421,7 +1410,6 @@ export const recordLossOnChain = async (signer, betId) => {
 export const getRecordWinTransactionData = (betId, multiplier) => {
   const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI);
   const multiplierBasisPoints = Math.floor(multiplier * 10000);
-  console.log('Creating recordWin transaction: betId =', betId, 'multiplier =', multiplier, 'basisPoints =', multiplierBasisPoints);
   const data = contract.interface.encodeFunctionData('recordWin', [betId, multiplierBasisPoints]);
   
   return {
@@ -1457,7 +1445,6 @@ export const getMaxAllowedMultiplier = async (provider, playerAddress, betId) =>
     const maxMultiplier = await contract.getMaxAllowedMultiplier(playerAddress, betId);
     return Number(maxMultiplier) / 10000; // Convert from basis points
   } catch (error) {
-    console.error('Error getting max allowed multiplier:', error);
     return 0;
   }
 };
@@ -1487,7 +1474,6 @@ export const getNativeBalance = async (provider, address) => {
     const balance = await provider.getBalance(address);
     return ethers.formatEther(balance);
   } catch (error) {
-    console.error('Error fetching native balance:', error);
     throw error;
   }
 };

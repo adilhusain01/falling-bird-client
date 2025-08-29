@@ -11,7 +11,6 @@ const Login = () => {
     try {
       await login();
     } catch (error) {
-      console.error('Login failed:', error);
     } finally {
       setIsLoading(false);
     }

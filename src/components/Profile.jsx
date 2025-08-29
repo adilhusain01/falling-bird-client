@@ -12,6 +12,7 @@ import {
   getPendingWinnings,
   getClaimWinningsTransactionData
 } from '../utils/contractUtils';
+import { XPHERE_TESTNET } from '../config/constants';
 
 const Profile = () => {
   const { authenticated, fundWallet } = usePrivy();
@@ -31,14 +32,6 @@ const Profile = () => {
   const [isClaimingWinnings, setIsClaimingWinnings] = useState(false);
   const [lastClaimTx, setLastClaimTx] = useState(null);
   const [lastWinningsTx, setLastWinningsTx] = useState(null);
-
-  const XPHERE_TESTNET = {
-    chainId: 1998991,
-    name: 'Xphere Testnet',
-    rpcUrl: 'https://rpc.ankr.com/xphere_testnet',
-    nativeCurrency: { name: 'XPT', symbol: 'XPT', decimals: 18 },
-    blockExplorerUrl: 'https://xpt.tamsa.io/'
-  };
 
   // Fetch wallet balance, token balance, and faucet status
   useEffect(() => {
@@ -83,7 +76,6 @@ const Profile = () => {
           setError(null);
         } catch (err) {
           setError('Failed to fetch wallet data');
-          console.error(err);
         } finally {
           setIsLoadingBalances(false);
         }
@@ -98,7 +90,7 @@ const Profile = () => {
     const interval = setInterval(fetchWalletData, 30000);
     
     return () => clearInterval(interval);
-  }, [wallets, XPHERE_TESTNET.rpcUrl]);
+  }, [wallets]);
 
   // Handle winnings claiming
   const handleClaimWinnings = async () => {
@@ -148,7 +140,6 @@ const Profile = () => {
       
       setError(null);
     } catch (err) {
-      console.error('Error claiming winnings:', err);
       if (err.message.includes('No winnings to claim')) {
         setError('No winnings available to claim');
       } else if (err.message.includes('insufficient funds')) {
@@ -216,7 +207,6 @@ const Profile = () => {
       
       setError(null);
     } catch (err) {
-      console.error('Error claiming tokens:', err);
       if (err.message.includes('Faucet cooldown not met')) {
         setError('You need to wait before claiming again');
       } else if (err.message.includes('insufficient funds')) {
@@ -274,7 +264,6 @@ const Profile = () => {
       }
     } catch (err) {
       setError('Failed to switch to Xphere testnet');
-      console.error(err);
     }
   };
 
@@ -306,7 +295,6 @@ const Profile = () => {
       setError(null);
     } catch (err) {
       setError('Failed to initiate funding');
-      console.error(err);
     }
   };
 
@@ -317,7 +305,6 @@ const Profile = () => {
       navigate('/');
     } catch (err) {
       setError('Failed to log out');
-      console.error(err);
     }
   };
 

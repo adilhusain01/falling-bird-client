@@ -55,7 +55,6 @@ export class AudioManager {
                 try {
                     // Check if audio is supported
                     if (!window.AudioContext && !window.webkitAudioContext) {
-                        console.warn('Web Audio API not supported');
                         this.soundEnabled = false;
                         return false;
                     }
@@ -65,7 +64,6 @@ export class AudioManager {
                         try {
                             await this.context.close();
                         } catch (e) {
-                            console.warn('Error closing existing audio context:', e);
                         }
                     }
                     
@@ -74,7 +72,6 @@ export class AudioManager {
                     // Add error event listener
                     this.context.addEventListener('statechange', () => {
                         if (this.context) {
-                            console.log('Audio context state changed to:', this.context.state);
                         }
                     });
                     
@@ -94,12 +91,10 @@ export class AudioManager {
                     // Only resume if suspended due to browser policy
                     if (this.context.state === 'suspended') {
                         // Don't auto-resume, wait for user interaction
-                        console.log('Audio context suspended, waiting for user interaction');
                     }
                     
                     return true;
                 } catch (e) {
-                    console.error('Audio initialization error:', e);
                     this.context = null;
                     this.soundEnabled = false;
                     return false;
@@ -110,9 +105,7 @@ export class AudioManager {
                 if (this.context && this.context.state === 'suspended') {
                     try {
                         await this.context.resume();
-                        console.log('Audio context resumed successfully');
                     } catch (e) {
-                        console.error('Failed to resume audio context:', e);
                         this.soundEnabled = false;
                     }
                 }
@@ -135,7 +128,6 @@ export class AudioManager {
                     
                     return { oscillator, gainNode };
                 } catch (e) {
-                    console.error('Error creating oscillator:', e);
                     return null;
                 }
             }
@@ -280,7 +272,6 @@ export class AudioManager {
                 try {
                     this.musicGain.gain.linearRampToValueAtTime(0, this.context.currentTime + 1);
                 } catch (e) {
-                    console.log('Error stopping background music gain:', e);
                 }
                 
                 setTimeout(() => {
@@ -289,7 +280,6 @@ export class AudioManager {
                             if (node.oscillator) node.oscillator.stop();
                             if (node.vibrato) node.vibrato.stop();
                         } catch (e) {
-                            console.log('Error stopping audio node:', e);
                         }
                     });
                     this.backgroundMusicNodes = [];
@@ -347,7 +337,6 @@ export class AudioManager {
                         this.fallingSoundLfo.stop(this.context.currentTime + 0.4);
                     }
                 } catch (e) {
-                    console.log('Error stopping falling sound:', e);
                 }
                 
                 this.fallingSoundPlaying = false;
@@ -387,7 +376,6 @@ export class AudioManager {
                 noise.start();
                 noise.stop(this.context.currentTime + 0.5);
                 } catch (e) {
-                    console.error('Error playing crash sound:', e);
                 }
             }
             
@@ -415,7 +403,6 @@ export class AudioManager {
                     oscillator.stop(startTime + 0.3);
                 });
                 } catch (e) {
-                    console.error('Error playing cash out sound:', e);
                 }
             }
             

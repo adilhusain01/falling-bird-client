@@ -36,7 +36,6 @@ export class GameBettingService {
       const betId = generateBetId();
       this.currentBetId = betId;
       
-      console.log(`Placing bet: ${amount} GBT with max multiplier: ${maxMultiplier}x`);
       
       // Create transaction to transfer tokens to contract with max multiplier
       const txData = getPlaceBetTransactionData(betId, amount, maxMultiplier);
@@ -51,7 +50,6 @@ export class GameBettingService {
         txHash: result.transactionHash
       };
     } catch (error) {
-      console.error('Error placing bet:', error);
       throw new Error('Failed to place bet');
     }
   }
@@ -68,18 +66,15 @@ export class GameBettingService {
       // Calculate winnings
       const winnings = betAmount * multiplier;
       
-      console.log(`Recording win on blockchain: Bet: ${betAmount} GBT, Multiplier: ${multiplier}x, Winnings: ${winnings} GBT`);
       
       try {
         // Record the win on the blockchain (self-recording)
         const txData = getRecordWinTransactionData(betId, multiplier);
-        console.log('Sending recordWin transaction with data:', txData);
         
         const result = await this.sendTransaction(txData, {
           address: this.wallet.address
         });
         
-        console.log('Win recorded on blockchain! Transaction hash:', result.transactionHash);
         
         return {
           betId,
@@ -89,7 +84,6 @@ export class GameBettingService {
           message: `Congratulations! You won ${winnings.toFixed(2)} GBT (${multiplier}x multiplier)`
         };
       } catch (blockchainError) {
-        console.error('Failed to record win on blockchain:', blockchainError);
         // If blockchain recording fails, still return the win info for display
         return {
           betId,
@@ -99,7 +93,6 @@ export class GameBettingService {
         };
       }
     } catch (error) {
-      console.error('Error handling win:', error);
       throw new Error('Failed to process win');
     }
   }
@@ -113,7 +106,6 @@ export class GameBettingService {
    */
   async handleLoss(betId, betAmount, betTxHash) {
     try {
-      console.log(`Recording loss on blockchain: Bet ID: ${betId}, Amount: ${betAmount} GBT`);
       
       try {
         // Record the loss on the blockchain (self-recording)
@@ -123,7 +115,6 @@ export class GameBettingService {
           address: this.wallet.address
         });
         
-        console.log('Loss recorded on blockchain! Transaction hash:', result.transactionHash);
         
         return {
           betId,
@@ -132,7 +123,6 @@ export class GameBettingService {
           message: `Loss recorded: ${betAmount} GBT tokens remain in treasury`
         };
       } catch (blockchainError) {
-        console.error('Failed to record loss on blockchain:', blockchainError);
         // Return original bet transaction as fallback
         return {
           betId,
@@ -142,7 +132,6 @@ export class GameBettingService {
         };
       }
     } catch (error) {
-      console.error('Error handling loss:', error);
       throw new Error('Failed to process loss');
     }
   }
@@ -161,7 +150,6 @@ export class GameBettingService {
       
       return result.transactionHash;
     } catch (error) {
-      console.error('Error claiming winnings:', error);
       throw new Error('Failed to claim winnings');
     }
   }
@@ -185,7 +173,6 @@ export class GameBettingService {
         pendingWinnings: parseFloat(pendingWinnings)
       };
     } catch (error) {
-      console.error('Error fetching updated balances:', error);
       throw new Error('Failed to fetch updated balances');
     }
   }
@@ -199,7 +186,6 @@ export class GameBettingService {
     try {
       return await getBetDetails(provider, this.wallet.address, betId);
     } catch (error) {
-      console.error('Error getting bet details:', error);
       throw new Error('Failed to get bet details');
     }
   }

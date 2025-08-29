@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useWallets } from '@privy-io/react-auth';
 import { ethers } from 'ethers';
 import { getPendingWinnings } from './contractUtils';
+import { XPHERE_TESTNET_RPC } from '../config/constants';
 
 /**
  * Hook to manage pending winnings for the current wallet
@@ -11,8 +12,6 @@ export const usePendingWinnings = () => {
   const [pendingWinnings, setPendingWinnings] = useState('0');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  const XPHERE_TESTNET_RPC = 'https://rpc.ankr.com/xphere_testnet';
 
   const fetchPendingWinnings = async () => {
     if (wallets.length === 0) {
@@ -36,7 +35,6 @@ export const usePendingWinnings = () => {
       const winnings = await getPendingWinnings(provider, wallet.address);
       setPendingWinnings(winnings);
     } catch (err) {
-      console.error('Error fetching pending winnings:', err);
       setError('Failed to fetch pending winnings');
       setPendingWinnings('0');
     } finally {
@@ -46,7 +44,7 @@ export const usePendingWinnings = () => {
 
   useEffect(() => {
     fetchPendingWinnings();
-  }, [wallets]);
+  }, [wallets.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refetch = () => {
     fetchPendingWinnings();

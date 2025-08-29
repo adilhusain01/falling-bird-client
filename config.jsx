@@ -1,5 +1,5 @@
 <PrivyProvider 
-  appId="your-privy-app-id"
+  appId="cmdx3unrh01cuk10bwfqveom6"
   config={{
   "appearance": {
     "accentColor": "#6A6FF5",
