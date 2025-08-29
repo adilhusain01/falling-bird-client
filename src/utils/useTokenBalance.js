@@ -3,9 +3,9 @@ import { useWallets } from '@privy-io/react-auth';
 import { ethers } from 'ethers';
 import { getTokenBalance, getNativeBalance } from './contractUtils';
 
-const SOMNIA_TESTNET = {
-  chainId: 50312,
-  rpcUrl: 'https://dream-rpc.somnia.network/',
+const XPHERE_TESTNET = {
+  chainId: 1998991,
+  rpcUrl: 'https://rpc.ankr.com/xphere_testnet',
 };
 
 export const useTokenBalance = () => {
@@ -27,7 +27,7 @@ export const useTokenBalance = () => {
       if (wallet.connector?.ethersProvider) {
         provider = wallet.connector.ethersProvider;
       } else {
-        provider = new ethers.JsonRpcProvider(SOMNIA_TESTNET.rpcUrl);
+        provider = new ethers.JsonRpcProvider(XPHERE_TESTNET.rpcUrl);
       }
 
       // Fetch both balances in parallel

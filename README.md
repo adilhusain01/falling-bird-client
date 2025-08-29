@@ -1,6 +1,6 @@
 # Catch Goofy
 
-A fun blockchain-based game where you catch falling Goofy birds and win rewards! Built with React + Vite and integrated with Somnia testnet.
+A fun blockchain-based game where you catch falling Goofy birds and win rewards! Built with React + Vite and integrated with Xphere testnet.
 
 This game allows players to place bets, catch falling Goofy birds at the right moment, and earn multiplied rewards based on their timing.
 

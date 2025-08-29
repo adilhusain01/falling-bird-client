@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 
-// GoofyBirdToken contract address on Somnia testnet
-export const CONTRACT_ADDRESS = '0x259eb6c7dde265577b422c4c5ce74d776fbd49cb';
+// GoofyBirdToken contract address on Xphere testnet
+export const CONTRACT_ADDRESS = '0xFd4987665521b9D3d9a85956EC09d210A4BdB13B';
 
 // Contract ABI - includes all functions we need
 export const CONTRACT_ABI = [
@@ -1481,9 +1481,7 @@ export const formatTimeRemaining = (seconds) => {
   }
 };
 
-/**
- * Get native token (STT) balance
- */
+
 export const getNativeBalance = async (provider, address) => {
   try {
     const balance = await provider.getBalance(address);

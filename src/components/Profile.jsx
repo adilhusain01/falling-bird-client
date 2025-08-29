@@ -32,12 +32,12 @@ const Profile = () => {
   const [lastClaimTx, setLastClaimTx] = useState(null);
   const [lastWinningsTx, setLastWinningsTx] = useState(null);
 
-  const SOMNIA_TESTNET = {
-    chainId: 50312,
-    name: 'Somnia Testnet',
-    rpcUrl: 'https://dream-rpc.somnia.network/',
-    nativeCurrency: { name: 'SST', symbol: 'SST', decimals: 18 },
-    blockExplorerUrl: 'https://shannon-explorer.somnia.network/'
+  const XPHERE_TESTNET = {
+    chainId: 1998991,
+    name: 'Xphere Testnet',
+    rpcUrl: 'https://rpc.ankr.com/xphere_testnet',
+    nativeCurrency: { name: 'XPT', symbol: 'XPT', decimals: 18 },
+    blockExplorerUrl: 'https://xpt.tamsa.io/'
   };
 
   // Fetch wallet balance, token balance, and faucet status
@@ -51,11 +51,10 @@ const Profile = () => {
           if (wallet.connector?.ethersProvider) {
             provider = wallet.connector.ethersProvider;
           } else {
-            // Default to Somnia testnet RPC
-            provider = new ethers.JsonRpcProvider(SOMNIA_TESTNET.rpcUrl);
+            provider = new ethers.JsonRpcProvider(XPHERE_TESTNET.rpcUrl);
           }
 
-          // Fetch native balance (STT)
+          // Fetch native balance (XPT)
           const nativeBalance = await getNativeBalance(provider, wallet.address);
           setBalance(nativeBalance);
 
@@ -99,7 +98,7 @@ const Profile = () => {
     const interval = setInterval(fetchWalletData, 30000);
     
     return () => clearInterval(interval);
-  }, [wallets, SOMNIA_TESTNET.rpcUrl]);
+  }, [wallets, XPHERE_TESTNET.rpcUrl]);
 
   // Handle winnings claiming
   const handleClaimWinnings = async () => {
@@ -110,9 +109,9 @@ const Profile = () => {
     setError(null);
 
     try {
-      // Check if we're on Somnia testnet
-      if (currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}`) {
-        setError('Please switch to Somnia Testnet first');
+      // Check if we're on Xphere testnet
+      if (currentChainId !== `eip155:${XPHERE_TESTNET.chainId}`) {
+        setError('Please switch to Xphere Testnet first');
         setIsClaimingWinnings(false);
         return;
       }
@@ -135,7 +134,7 @@ const Profile = () => {
       if (wallet.connector?.ethersProvider) {
         provider = wallet.connector.ethersProvider;
       } else {
-        provider = new ethers.JsonRpcProvider(SOMNIA_TESTNET.rpcUrl);
+        provider = new ethers.JsonRpcProvider(XPHERE_TESTNET.rpcUrl);
       }
       
       const [nativeBalance, gbtBalance, winnings] = await Promise.all([
@@ -173,9 +172,9 @@ const Profile = () => {
     setError(null);
 
     try {
-      // Check if we're on Somnia testnet
-      if (currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}`) {
-        setError('Please switch to Somnia Testnet first');
+      // Check if we're on Xphere testnet
+      if (currentChainId !== `eip155:${XPHERE_TESTNET.chainId}`) {
+        setError('Please switch to Xphere Testnet first');
         setIsClaimingTokens(false);
         return;
       }
@@ -198,7 +197,7 @@ const Profile = () => {
       if (wallet.connector?.ethersProvider) {
         provider = wallet.connector.ethersProvider;
       } else {
-        provider = new ethers.JsonRpcProvider(SOMNIA_TESTNET.rpcUrl);
+        provider = new ethers.JsonRpcProvider(XPHERE_TESTNET.rpcUrl);
       }
       
       const [nativeBalance, gbtBalance, winnings] = await Promise.all([
@@ -245,26 +244,26 @@ const Profile = () => {
       if (wallet.connector?.ethersProvider) {
         const provider = wallet.connector.ethersProvider;
         
-        // Try to switch to Somnia testnet
+      
         try {
           await provider.send('wallet_switchEthereumChain', [
-            { chainId: `0x${SOMNIA_TESTNET.chainId.toString(16)}` }
+            { chainId: `0x${XPHERE_TESTNET.chainId.toString(16)}` }
           ]);
-          setCurrentChainId(`eip155:${SOMNIA_TESTNET.chainId}`);
+          setCurrentChainId(`eip155:${XPHERE_TESTNET.chainId}`);
           setError(null);
         } catch (switchError) {
           // If network doesn't exist, add it
           if (switchError.code === 4902) {
             await provider.send('wallet_addEthereumChain', [
               {
-                chainId: `0x${SOMNIA_TESTNET.chainId.toString(16)}`,
-                chainName: SOMNIA_TESTNET.name,
-                rpcUrls: [SOMNIA_TESTNET.rpcUrl],
-                nativeCurrency: SOMNIA_TESTNET.nativeCurrency,
-                blockExplorerUrls: [SOMNIA_TESTNET.blockExplorerUrl]
+                chainId: `0x${XPHERE_TESTNET.chainId.toString(16)}`,
+                chainName: XPHERE_TESTNET.name,
+                rpcUrls: [XPHERE_TESTNET.rpcUrl],
+                nativeCurrency: XPHERE_TESTNET.nativeCurrency,
+                blockExplorerUrls: [XPHERE_TESTNET.blockExplorerUrl]
               }
             ]);
-            setCurrentChainId(`eip155:${SOMNIA_TESTNET.chainId}`);
+            setCurrentChainId(`eip155:${XPHERE_TESTNET.chainId}`);
             setError(null);
           } else {
             throw switchError;
@@ -274,7 +273,7 @@ const Profile = () => {
         setError('Wallet does not support network switching');
       }
     } catch (err) {
-      setError('Failed to switch to Somnia testnet');
+      setError('Failed to switch to Xphere testnet');
       console.error(err);
     }
   };
@@ -284,8 +283,8 @@ const Profile = () => {
     
     const chainId = currentChainId.split(':')[1];
     switch (chainId) {
-      case '50312':
-        return 'Somnia Testnet';
+      case '1998991':
+        return 'Xphere Testnet';
       case '1':
         return 'Ethereum Mainnet';
       case '11155111':
@@ -409,7 +408,7 @@ const Profile = () => {
                     `${parseFloat(balance).toFixed(4)} SST`}
                 </p>
                 <p className="text-xs text-accent mt-1">
-                  Used for gas fees on Somnia network
+                  Used for gas fees on Xphere network
                 </p>
               </div>
               
@@ -451,12 +450,12 @@ const Profile = () => {
 {parseFloat(pendingWinnings) > 0 && (
               <button
                 className={`ghibli-button ghibli-button-green w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
-                  isClaimingWinnings || wallets.length === 0 || currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}` || isLoadingBalances
+                  isClaimingWinnings || wallets.length === 0 || currentChainId !== `eip155:${XPHERE_TESTNET.chainId}` || isLoadingBalances
                     ? 'opacity-60 cursor-not-allowed' 
                     : ''
                 }`}
                 onClick={handleClaimWinnings}
-                disabled={isClaimingWinnings || wallets.length === 0 || currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}`}
+                disabled={isClaimingWinnings || wallets.length === 0 || currentChainId !== `eip155:${XPHERE_TESTNET.chainId}`}
               >
                 <span className="text-xl">🏆</span>
                 {isClaimingWinnings ? (
@@ -500,12 +499,12 @@ const Profile = () => {
             {/* Claim Tokens Button */}
             <button
               className={`ghibli-button w-full py-4 px-5 text-base font-bold flex items-center justify-center gap-3 ${
-                !canClaim || isClaimingTokens || wallets.length === 0 || currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}`
+                !canClaim || isClaimingTokens || wallets.length === 0 || currentChainId !== `eip155:${XPHERE_TESTNET.chainId}`
                   ? 'opacity-60 cursor-not-allowed' 
                   : 'ghibli-button-green'
               }`}
               onClick={handleClaimTokens}
-              disabled={!canClaim || isClaimingTokens || wallets.length === 0 || currentChainId !== `eip155:${SOMNIA_TESTNET.chainId}`}
+              disabled={!canClaim || isClaimingTokens || wallets.length === 0 || currentChainId !== `eip155:${XPHERE_TESTNET.chainId}`}
             >
               <span className="text-xl">🪙</span>
               {isClaimingTokens ? (
@@ -607,4 +606,3 @@ const Profile = () => {
 export default Profile;
 
 
-//0x42C07c27BC76796F02c9775343bbD3005A527FaA

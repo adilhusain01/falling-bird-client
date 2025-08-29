@@ -12,7 +12,7 @@ export const usePendingWinnings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const SOMNIA_TESTNET_RPC = 'https://dream-rpc.somnia.network/';
+  const XPHERE_TESTNET_RPC = 'https://rpc.ankr.com/xphere_testnet/';
 
   const fetchPendingWinnings = async () => {
     if (wallets.length === 0) {
@@ -30,7 +30,7 @@ export const usePendingWinnings = () => {
       if (wallet.connector?.ethersProvider) {
         provider = wallet.connector.ethersProvider;
       } else {
-        provider = new ethers.JsonRpcProvider(SOMNIA_TESTNET_RPC);
+        provider = new ethers.JsonRpcProvider(XPHERE_TESTNET_RPC);
       }
 
       const winnings = await getPendingWinnings(provider, wallet.address);
