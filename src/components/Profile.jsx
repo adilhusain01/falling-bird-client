@@ -19,7 +19,7 @@ const Profile = () => {
   const { logout } = useLogout();
   const { sendTransaction } = useSendTransaction();
   const navigate = useNavigate();
-  const [balance, setBalance] = useState('0'); // STT balance
+  const [balance, setBalance] = useState('0'); // XPT balance
   const [tokenBalance, setTokenBalance] = useState('0'); // GBT token balance
   const [pendingWinnings, setPendingWinnings] = useState('0'); // Pending winnings
   const [isLoadingBalances, setIsLoadingBalances] = useState(true); // Loading state for balances
@@ -152,7 +152,7 @@ const Profile = () => {
       if (err.message.includes('No winnings to claim')) {
         setError('No winnings available to claim');
       } else if (err.message.includes('insufficient funds')) {
-        setError('Insufficient SST balance for gas fees');
+        setError('Insufficient XPT balance for gas fees');
       } else if (err.message.includes('User rejected')) {
         setError('Transaction was cancelled');
       } else {
@@ -220,7 +220,7 @@ const Profile = () => {
       if (err.message.includes('Faucet cooldown not met')) {
         setError('You need to wait before claiming again');
       } else if (err.message.includes('insufficient funds')) {
-        setError('Insufficient SST balance for gas fees');
+        setError('Insufficient XPT balance for gas fees');
       } else if (err.message.includes('User rejected')) {
         setError('Transaction was cancelled');
       } else {
@@ -401,11 +401,11 @@ const Profile = () => {
               
               <div className="p-4 accent-card-blue">
                 <p className="text-primary text-sm font-semibold">
-                  ⚡ SST Balance: {isLoadingBalances ? 
+                  ⚡ XPT Balance: {isLoadingBalances ? 
                     <span className="inline-flex items-center gap-1">
                       <span className="animate-spin">🌀</span>Loading...
                     </span> : 
-                    `${parseFloat(balance).toFixed(4)} SST`}
+                    `${parseFloat(balance).toFixed(4)} XPT`}
                 </p>
                 <p className="text-xs text-accent mt-1">
                   Used for gas fees on Xphere network

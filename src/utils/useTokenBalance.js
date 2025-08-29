@@ -31,13 +31,13 @@ export const useTokenBalance = () => {
       }
 
       // Fetch both balances in parallel
-      const [gbtBalance, sttBalance] = await Promise.all([
+      const [gbtBalance, xptBalance] = await Promise.all([
         getTokenBalance(provider, wallet.address),
         getNativeBalance(provider, wallet.address)
       ]);
 
       setTokenBalance(gbtBalance);
-      setNativeBalance(sttBalance);
+      setNativeBalance(xptBalance);
     } catch (err) {
       console.error('Error fetching balances:', err);
       setError('Failed to fetch balances');
